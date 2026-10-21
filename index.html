@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Calculadora de dólar para real com porcentagem, cotação do dia e lista de produtos salvos.">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5830527756686931" crossorigin="anonymous"></script>
+<title>Dólar com Taxa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: uma coluna estreita com duas abas. Calculadora (resultado em cima, entradas embaixo) e Salvos (total em cima, formulário, lista). */
+  :root {
+    --bg: #eef2ef;
+    --surface: #ffffff;
+    --fg: #14201a;
+    --muted: #5d6e64;
+    --line: #d3ddd6;
+    --accent: #0b6b4a;
+    --accent-fg: #ffffff;
+    --danger: #b3261e;
+    --result-bg: #0f3d2c;
+    --result-fg: #eafaf2;
+    --result-muted: #9fc9b4;
+    --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-num: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1310;
+      --surface: #131d18;
+      --fg: #e6f0ea;
+      --muted: #8fa398;
+      --line: #25352d;
+      --accent: #4fcf9b;
+      --accent-fg: #06251a;
+      --danger: #ff8f86;
+      --result-bg: #0a2a1e;
+      --result-fg: #eafaf2;
+      --result-muted: #86b9a0;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1310;
+    --surface: #131d18;
+    --fg: #e6f0ea;
+    --muted: #8fa398;
+    --line: #25352d;
+    --accent: #4fcf9b;
+    --accent-fg: #06251a;
+    --danger: #ff8f86;
+    --result-bg: #0a2a1e;
+    --result-fg: #eafaf2;
+    --result-muted: #86b9a0;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.45;
+    padding-inline: 16px;
+    padding-block: 24px 40px;
+  }
+  .wrap {
+    max-width: 440px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .view { display: flex; flex-direction: column; gap: 20px; }
+  header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  header p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  /* Abas */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 4px;
+  }
+  .tab {
+    appearance: none;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 10px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .tab[aria-selected="true"] {
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-weight: 700;
+  }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .badge {
+    font-family: var(--font-num);
+    font-size: 0.75rem;
+    min-width: 1.5em;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 18%, transparent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .field label, .lbl {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .input-row {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .input-row:focus-within { border-color: var(--accent); }
+  .affix {
+    display: flex;
+    align-items: center;
+    padding-inline: 14px;
+    font-family: var(--font-num);
+    font-size: 0.95rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .input-row input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--fg);
+    font-family: var(--font-num);
+    font-size: 1.25rem;
+    font-weight: 500;
+    padding: 12px 14px 12px 0;
+    text-align: right;
+  }
+  .input-row input.pad-left { padding-left: 14px; }
+  .input-row input.text {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 400;
+    text-align: left;
+    padding: 12px 14px;
+  }
+  .hint { font-size: 0.8rem; color: var(--muted); }
+
+  .seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: center;
+    padding: 9px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .seg input:checked + label {
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-weight: 700;
+  }
+  .seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .result {
+    background: var(--result-bg);
+    color: var(--result-fg);
+    border-radius: 14px;
+    padding: 20px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .result .label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--result-muted);
+  }
+  .total {
+    font-family: var(--font-num);
+    font-size: clamp(2rem, 9vw, 2.6rem);
+    font-weight: 500;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .total.empty { color: var(--result-muted); }
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px dashed color-mix(in srgb, var(--result-muted) 55%, transparent);
+    padding-top: 12px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.9rem;
+  }
+  .row span:first-child { color: var(--result-muted); min-width: 0; }
+  .row span:last-child {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    appearance: none;
+    border: 0;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 12px 12px;
+    cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:focus-visible { outline: 2px solid var(--result-fg); outline-offset: 2px; }
+  .btn[disabled] { opacity: 0.5; cursor: default; filter: none; }
+  .btn.ghost {
+    background: transparent;
+    color: var(--result-fg);
+    border: 1.5px solid color-mix(in srgb, var(--result-muted) 70%, transparent);
+  }
+  .btn.solid-panel:focus-visible { outline-color: var(--accent); }
+  .note { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+  /* Aba Salvos */
+  .cur {
+    font-family: var(--font-num);
+    font-size: 1.6rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .cur.empty { color: var(--muted); }
+  .list-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .list { display: flex; flex-direction: column; }
+  .item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding-block: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .item:first-child { border-top: 0; padding-top: 4px; }
+  .item:last-child { padding-bottom: 0; }
+  .item .l, .item .r { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .item .r { align-items: flex-end; }
+  .desc { font-weight: 700; overflow-wrap: anywhere; }
+  .desc.none { font-weight: 400; color: var(--muted); font-style: italic; }
+  .sub { font-size: 0.9rem; overflow-wrap: anywhere; }
+  .acts { display: flex; gap: 14px; justify-content: flex-end; }
+  .item.editing { display: flex; flex-direction: column; gap: 12px; }
+  .edit-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .conv {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px dashed color-mix(in srgb, var(--result-muted) 55%, transparent);
+    padding-top: 12px;
+  }
+  .input-row.dark {
+    background: color-mix(in srgb, var(--result-fg) 8%, transparent);
+    border-color: color-mix(in srgb, var(--result-muted) 55%, transparent);
+  }
+  .input-row.dark:focus-within { border-color: var(--result-fg); }
+  .result .input-row input { color: var(--result-fg); }
+  .result .affix { color: var(--result-muted); }
+  .total.small { font-size: clamp(1.5rem, 7vw, 1.9rem); }
+  .btn.line {
+    background: transparent;
+    color: var(--fg);
+    border: 1.5px solid var(--line);
+  }
+  .meta { font-size: 0.78rem; color: var(--muted); overflow-wrap: anywhere; }
+  .val {
+    font-family: var(--font-num);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .del {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .del:hover { color: var(--fg); }
+  .del:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .del.armed { color: var(--danger); font-weight: 700; text-decoration: none; }
+  .empty-state { color: var(--muted); font-size: 0.9rem; margin: 0; }
+
+  /* Versão compacta: tudo cabe em uma tela */
+  body { font-size: 15px; line-height: 1.35; padding-block: 12px 16px; }
+  .wrap, .view { gap: 10px; }
+  header { display: flex; align-items: baseline; }
+  header h1 { font-size: 1.15rem; }
+  header p { display: none; }
+  .tabs { padding: 3px; border-radius: 10px; }
+  .tab { padding: 7px 8px; font-size: 0.9rem; }
+  .panel { padding: 12px; gap: 10px; border-radius: 12px; }
+  .field { gap: 4px; }
+  .field label, .lbl, .result .label { font-size: 0.66rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+  .affix { padding-inline: 10px; font-size: 0.85rem; }
+  .input-row input { font-size: 1.05rem; padding: 8px 10px 8px 0; }
+  .input-row input.pad-left { padding-left: 10px; }
+  .input-row input.text { font-size: 0.95rem; padding: 8px 10px; }
+  .seg { padding: 3px; }
+  .seg label { padding: 7px 4px; font-size: 0.85rem; }
+  .result { padding: 12px 14px; gap: 8px; border-radius: 12px; }
+  .total { font-size: clamp(1.6rem, 8vw, 2rem); }
+  .total.small { font-size: clamp(1.2rem, 6vw, 1.5rem); }
+  .rows { gap: 3px; padding-top: 8px; }
+  .row { font-size: 0.82rem; }
+  .actions, .edit-actions { gap: 8px; }
+  .btn { padding: 9px 10px; font-size: 0.88rem; }
+  .cur { font-size: 1.2rem; }
+  .conv { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; padding-top: 8px; }
+  .item { padding-block: 8px; gap: 8px; }
+  .item:first-child { padding-top: 0; }
+  .list { max-height: 26vh; overflow-y: auto; }
+  .hint { font-size: 0.75rem; }
+  .daily {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px 8px 8px 12px;
+  }
+  .daily-txt { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; min-width: 0; }
+  .daily-val { font-family: var(--font-num); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+  .daily .btn { padding: 7px 14px; }
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Dólar com Taxa</h1>
+    <p>Converte dólar em real, soma ou desconta a porcentagem e guarda uma lista.</p>
+  </header>
+
+  <div class="daily" id="daily">
+    <div class="daily-txt">
+      <span class="lbl">Dólar hoje</span>
+      <b class="daily-val" id="daily-val"></b>
+      <span class="meta" id="daily-meta"></span>
+    </div>
+    <button class="btn" id="daily-use" type="button">Usar</button>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Abas">
+    <button class="tab" role="tab" id="tab-calc" type="button" aria-selected="true" aria-controls="view-calc">Calculadora</button>
+    <button class="tab" role="tab" id="tab-saved" type="button" aria-selected="false" aria-controls="view-saved">Salvos <span class="badge" id="count">0</span></button>
+  </div>
+
+  <!-- ABA 1: CALCULADORA -->
+  <div class="view" id="view-calc" role="tabpanel" aria-labelledby="tab-calc">
+    <section class="result" aria-live="polite">
+      <div class="label">Valor final</div>
+      <div class="total" id="total">R$ 0,00</div>
+      <div class="rows">
+        <div class="row"><span id="l-conv">Dólar × cotação</span><span id="v-conv">R$ 0,00</span></div>
+        <div class="row"><span id="l-pct">Porcentagem</span><span id="v-pct">R$ 0,00</span></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="copy" type="button">Copiar valor</button>
+        <button class="btn ghost" id="save-shortcut" type="button">Salvar na lista</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Dados">
+      <div class="field">
+        <label for="product">Nome do produto</label>
+        <div class="input-row">
+          <input id="product" class="text" type="text" maxlength="120" autocomplete="off" placeholder="Cole o nome do produto aqui">
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="usd">Valor em dólar</label>
+          <div class="input-row">
+            <span class="affix">US$</span>
+            <input id="usd" type="text" inputmode="decimal" autocomplete="off" value="100">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="rate">Cotação do dólar</label>
+          <div class="input-row">
+            <span class="affix">R$</span>
+            <input id="rate" type="text" inputmode="decimal" autocomplete="off" value="4,99" title="Valor de exemplo (cotação de 09/10). Troque pela cotação que você usa.">
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="pct">Porcentagem</label>
+          <div class="input-row">
+            <input id="pct" class="pad-left" type="text" inputmode="decimal" autocomplete="off" value="5">
+            <span class="affix">%</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="seg" role="radiogroup" aria-label="Tipo da porcentagem">
+            <input type="radio" name="mode" id="mode-add" value="add" checked>
+            <label for="mode-add">Somar</label>
+            <input type="radio" name="mode" id="mode-sub" value="sub">
+            <label for="mode-sub">Descontar</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="note" id="note"></p>
+  </div>
+
+  <!-- ABA 2: SALVOS -->
+  <div class="view" id="view-saved" role="tabpanel" aria-labelledby="tab-saved" hidden>
+    <section class="result" aria-live="polite">
+      <div class="label">Total salvo</div>
+      <div class="total" id="sum">R$ 0,00</div>
+      <div class="rows">
+        <div class="row"><span>Itens na lista</span><span id="sum-count">0</span></div>
+      </div>
+      <div class="conv">
+        <div class="field">
+          <label class="label" for="conv-rate">Cotação do dólar</label>
+          <div class="input-row dark">
+            <span class="affix">R$</span>
+            <input id="conv-rate" type="text" inputmode="decimal" autocomplete="off" value="4,99">
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Total em dólar</div>
+          <div class="total small" id="sum-usd">US$ 0,00</div>
+        </div>
+      </div>
+    </section>
+
+    <form class="panel" id="save-form" autocomplete="off">
+      <div class="field">
+        <span class="lbl">Valor final da calculadora</span>
+        <div class="cur" id="cur-value">R$ —</div>
+        <span class="hint" id="cur-product"></span>
+      </div>
+      <div class="field">
+        <label for="desc">Descrição (opcional)</label>
+        <div class="input-row">
+          <input id="desc" class="text" type="text" maxlength="80" placeholder="Ex.: cliente João, pagamento em 2x">
+        </div>
+      </div>
+      <button class="btn solid-panel" id="save-btn" type="submit">Salvar</button>
+      <span class="hint" id="save-hint"></span>
+    </form>
+
+    <section class="panel" aria-label="Itens salvos">
+      <div class="list-head">
+        <span class="lbl">Itens salvos</span>
+      </div>
+      <div class="list" id="list"></div>
+      <p class="empty-state" id="empty">Nenhum valor salvo ainda. Calcule na aba Calculadora e salve aqui com uma descrição.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var usd = $("usd"), rate = $("rate"), pct = $("pct"), product = $("product");
+    var brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    var current = null;
+    var saved = [];
+    var armedId = null;
+    var editingId = null;
+    var sumCentsNow = 0;
+    var usdFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" });
+    // Cotação do dia: a tarefa diária reescreve só a linha abaixo.
+    var DAILY = { usd: "5,11", date: "21/10/2026 16:45", source: "Câmbio da fronteira" };
+
+    /* ---------- Cálculo ---------- */
+
+    // Aceita "1.234,56", "1234,56" e "1234.56".
+    function parseNum(text) {
+      var v = String(text == null ? "" : text).trim().replace(/\s/g, "");
+      if (!v) return NaN;
+      if (v.indexOf(",") !== -1) {
+        v = v.replace(/\./g, "").replace(",", ".");
+      } else if (/^\d{1,3}(\.\d{3})+$/.test(v)) {
+        v = v.replace(/\./g, "");
+      }
+      return /^-?\d*\.?\d+$/.test(v) ? parseFloat(v) : NaN;
+    }
+
+    function calc(usdValue, rateValue, pctValue, mode) {
+      var converted = usdValue * rateValue;
+      var amount = converted * (pctValue / 100);
+      var sign = mode === "sub" ? -1 : 1;
+      return { converted: converted, amount: amount * sign, total: converted + amount * sign };
+    }
+
+    function pctLabel(p) { return String(p).replace(".", ","); }
+
+    function update() {
+      var u = parseNum(usd.value);
+      var r = parseNum(rate.value);
+      var pRaw = pct.value.trim() === "" ? 0 : parseNum(pct.value);
+      var mode = document.querySelector('input[name="mode"]:checked').value;
+      var totalEl = $("total");
+
+      if (isNaN(u) || isNaN(r) || isNaN(pRaw)) {
+        current = null;
+        totalEl.textContent = "R$ —";
+        totalEl.classList.add("empty");
+        $("v-conv").textContent = "—";
+        $("v-pct").textContent = "—";
+        $("copy").disabled = true;
+        $("save-shortcut").disabled = true;
+        $("note").textContent = "Preencha o valor em dólar e a cotação com números.";
+      } else {
+        var out = calc(u, r, pRaw, mode);
+        current = {
+          cents: Math.round(out.total * 100),
+          product: product.value.trim(),
+          usd: usd.value.trim(),
+          rate: rate.value.trim(),
+          pct: pctLabel(pRaw),
+          mode: mode
+        };
+        totalEl.classList.remove("empty");
+        totalEl.textContent = brl.format(out.total);
+        $("l-conv").textContent = "US$ " + current.usd + " × " + current.rate;
+        $("v-conv").textContent = brl.format(out.converted);
+        $("l-pct").textContent = (mode === "sub" ? "Desconto de " : "Acréscimo de ") + current.pct + "%";
+        $("v-pct").textContent = (mode === "sub" ? "− " : "+ ") + brl.format(Math.abs(out.amount));
+        $("copy").disabled = false;
+        $("save-shortcut").disabled = false;
+        $("note").textContent = "";
+      }
+      refreshSaveForm();
+      saveInputs();
+    }
+
+    function saveInputs() {
+      try {
+        localStorage.setItem("dolar-com-taxa", JSON.stringify({
+          rate: rate.value, pct: pct.value,
+          mode: document.querySelector('input[name="mode"]:checked').value
+        }));
+      } catch (e) {}
+    }
+
+    function loadInputs() {
+      try {
+        var raw = localStorage.getItem("dolar-com-taxa");
+        if (!raw) return;
+        var s = JSON.parse(raw);
+        if (s.rate) rate.value = s.rate;
+        if (s.pct != null) pct.value = s.pct;
+        if (s.mode === "sub") $("mode-sub").checked = true;
+      } catch (e) {}
+    }
+
+    /* ---------- Copiar ---------- */
+
+    $("copy").addEventListener("click", function () {
+      if (!current) return;
+      var text = brl.format(current.cents / 100);
+      var btn = $("copy");
+      var done = function () {
+        btn.textContent = "Copiado";
+        setTimeout(function () { btn.textContent = "Copiar valor"; }, 1400);
+      };
+      var fallback = function () {
+        var range = document.createRange();
+        range.selectNodeContents($("total"));
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = "Selecionado";
+      };
+      try {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } catch (e) { fallback(); }
+    });
+
+    /* ---------- Abas ---------- */
+
+    function showTab(name) {
+      var isCalc = name === "calc";
+      $("view-calc").hidden = !isCalc;
+      $("view-saved").hidden = isCalc;
+      $("tab-calc").setAttribute("aria-selected", isCalc ? "true" : "false");
+      $("tab-saved").setAttribute("aria-selected", isCalc ? "false" : "true");
+    }
+    $("tab-calc").addEventListener("click", function () { showTab("calc"); });
+    $("tab-saved").addEventListener("click", function () { showTab("saved"); });
+    $("save-shortcut").addEventListener("click", function () {
+      showTab("saved");
+      $("desc").focus();
+    });
+
+    /* ---------- Lista de salvos ---------- */
+
+    function loadSaved() {
+      try {
+        var raw = localStorage.getItem("dolar-com-taxa-salvos");
+        var arr = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(arr)) saved = arr.filter(function (x) {
+          return x && typeof x.cents === "number" && typeof x.id === "string";
+        });
+      } catch (e) { saved = []; }
+    }
+
+    function persistSaved() {
+      try { localStorage.setItem("dolar-com-taxa-salvos", JSON.stringify(saved)); } catch (e) {}
+    }
+
+    function refreshSaveForm() {
+      $("cur-product").textContent = current && current.product ? "Produto: " + current.product : "";
+      var cv = $("cur-value");
+      var btn = $("save-btn");
+      if (current) {
+        cv.textContent = brl.format(current.cents / 100);
+        cv.classList.remove("empty");
+        btn.disabled = false;
+        $("save-hint").textContent = "";
+      } else {
+        cv.textContent = "R$ —";
+        cv.classList.add("empty");
+        btn.disabled = true;
+        $("save-hint").textContent = "Preencha a calculadora para poder salvar.";
+      }
+    }
+
+    function fmtDate(ts) {
+      var d = new Date(ts);
+      var two = function (n) { return n < 10 ? "0" + n : String(n); };
+      return two(d.getDate()) + "/" + two(d.getMonth() + 1) + " " + two(d.getHours()) + ":" + two(d.getMinutes());
+    }
+
+    function el(tag, cls, text) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    }
+
+    function buildEditor(it) {
+      var box = el("form", "item editing");
+      box.setAttribute("autocomplete", "off");
+
+      var f1 = el("div", "field");
+      var l1 = el("label", null, "Nome do produto");
+      l1.setAttribute("for", "ed-product");
+      var r1 = el("div", "input-row");
+      var i1 = el("input", "text");
+      i1.id = "ed-product";
+      i1.type = "text";
+      i1.maxLength = 120;
+      i1.value = it.product || "";
+      i1.placeholder = "Nome do produto";
+      r1.appendChild(i1);
+      f1.appendChild(l1);
+      f1.appendChild(r1);
+
+      var f2 = el("div", "field");
+      var l2 = el("label", null, "Descrição (opcional)");
+      l2.setAttribute("for", "ed-desc");
+      var r2 = el("div", "input-row");
+      var i2 = el("input", "text");
+      i2.id = "ed-desc";
+      i2.type = "text";
+      i2.maxLength = 80;
+      i2.value = it.desc || "";
+      i2.placeholder = "Descrição";
+      r2.appendChild(i2);
+      f2.appendChild(l2);
+      f2.appendChild(r2);
+
+      var acts = el("div", "edit-actions");
+      var ok = el("button", "btn solid-panel", "Salvar alterações");
+      ok.type = "submit";
+      var cancel = el("button", "btn line solid-panel", "Cancelar");
+      cancel.type = "button";
+      cancel.addEventListener("click", function () { editingId = null; renderList(); });
+      acts.appendChild(ok);
+      acts.appendChild(cancel);
+
+      box.appendChild(f1);
+      box.appendChild(f2);
+      box.appendChild(acts);
+      box.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var target = saved.filter(function (x) { return x.id === it.id; })[0];
+        if (target) {
+          target.product = i1.value.trim();
+          target.desc = i2.value.trim();
+          persistSaved();
+        }
+        editingId = null;
+        renderList();
+      });
+      return box;
+    }
+
+    // Total salvo (em reais) dividido pela cotação digitada = total em dólar.
+    function updateConv() {
+      var field = $("conv-rate");
+      var r = parseNum(field.value);
+      var out = $("sum-usd");
+      if (isNaN(r) || r <= 0) {
+        out.textContent = "US$ —";
+        out.classList.add("empty");
+      } else {
+        out.classList.remove("empty");
+        out.textContent = usdFmt.format(sumCentsNow / 100 / r);
+      }
+      try { localStorage.setItem("dolar-com-taxa-conv", field.value); } catch (e) {}
+    }
+
+    function renderList() {
+      var list = $("list");
+      list.textContent = "";
+      var sumCents = 0;
+
+      saved.forEach(function (it) {
+        sumCents += it.cents;
+
+        if (editingId === it.id) {
+          list.appendChild(buildEditor(it));
+          return;
+        }
+
+        var row = el("div", "item");
+        var left = el("div", "l");
+        var title = it.product || it.desc;
+        left.appendChild(title ? el("div", "desc", title) : el("div", "desc none", "Sem nome"));
+        if (it.product && it.desc) left.appendChild(el("div", "sub", it.desc));
+        var meta = "US$ " + it.usd + " × " + it.rate + " · " + (it.mode === "sub" ? "−" : "+") + it.pct + "% · " + fmtDate(it.ts);
+        left.appendChild(el("div", "meta", meta));
+
+        var right = el("div", "r");
+        right.appendChild(el("div", "val", brl.format(it.cents / 100)));
+        var del = el("button", "del" + (armedId === it.id ? " armed" : ""), armedId === it.id ? "Confirmar exclusão" : "Excluir");
+        del.type = "button";
+        del.setAttribute("aria-label", "Excluir " + (it.product || it.desc || "item sem nome"));
+        del.addEventListener("click", function () { onDelete(it.id); });
+        var ed = el("button", "del", "Editar");
+        ed.type = "button";
+        ed.setAttribute("aria-label", "Editar " + (it.product || it.desc || "item sem nome"));
+        ed.addEventListener("click", function () {
+          armedId = null;
+          editingId = it.id;
+          renderList();
+          var inp = $("ed-product");
+          if (inp) inp.focus();
+        });
+        var acts = el("div", "acts");
+        acts.appendChild(ed);
+        acts.appendChild(del);
+        right.appendChild(acts);
+
+        row.appendChild(left);
+        row.appendChild(right);
+        list.appendChild(row);
+      });
+
+      $("sum").textContent = brl.format(sumCents / 100);
+      sumCentsNow = sumCents;
+      updateConv();
+      $("sum-count").textContent = String(saved.length);
+      $("count").textContent = String(saved.length);
+      $("empty").hidden = saved.length > 0;
+      list.hidden = saved.length === 0;
+    }
+
+    function onDelete(id) {
+      if (armedId === id) {
+        saved = saved.filter(function (x) { return x.id !== id; });
+        armedId = null;
+        persistSaved();
+        renderList();
+        return;
+      }
+      armedId = id;
+      renderList();
+      setTimeout(function () {
+        if (armedId === id) { armedId = null; renderList(); }
+      }, 3500);
+    }
+
+    $("save-form").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      if (!current) return;
+      var d = $("desc");
+      saved.unshift({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        product: current.product,
+        desc: d.value.trim(),
+        cents: current.cents,
+        usd: current.usd,
+        rate: current.rate,
+        pct: current.pct,
+        mode: current.mode,
+        ts: Date.now()
+      });
+      d.value = "";
+      product.value = "";
+      update();
+      persistSaved();
+      renderList();
+      var btn = $("save-btn");
+      btn.textContent = "Salvo";
+      setTimeout(function () { btn.textContent = "Salvar"; }, 1200);
+    });
+
+    /* ---------- Início ---------- */
+
+    [usd, rate, pct, product].forEach(function (e) { e.addEventListener("input", update); });
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="mode"]'), function (e) {
+      e.addEventListener("change", update);
+    });
+
+    try {
+      var storedConv = localStorage.getItem("dolar-com-taxa-conv");
+      if (storedConv) $("conv-rate").value = storedConv;
+    } catch (e) {}
+    $("conv-rate").addEventListener("input", updateConv);
+
+    $("daily-val").textContent = "R$ " + DAILY.usd;
+    $("daily-meta").textContent = DAILY.source + " · " + DAILY.date;
+    $("daily-use").addEventListener("click", function () {
+      rate.value = DAILY.usd;
+      $("conv-rate").value = DAILY.usd;
+      update();
+      updateConv();
+    });
+
+    loadInputs();
+    loadSaved();
+    update();
+    renderList();
+  })();
+</script>
+
+</body>
+</html>
