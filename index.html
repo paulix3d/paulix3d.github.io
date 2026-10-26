@@ -554,7 +554,7 @@
     var sumCentsNow = 0;
     var usdFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" });
     // Cotação do dia: a tarefa diária reescreve só a linha abaixo.
-    var DAILY = { usd: "5,20", date: "26/10/2026 10:00", source: "Câmbio da fronteira" };
+    var DAILY = { usd: "5,20", date: "26/10/2026 10:00", source: "PTAX Banco Central" };
 
     /* ---------- Cálculo ---------- */
 
@@ -912,7 +912,7 @@
     }
     showDaily();
     fetch("cotacao.json?t=" + Date.now()).then(function (r) { return r.json(); }).then(function (d) {
-      if (d && d.usd) { DAILY.usd = d.usd; DAILY.date = d.date; showDaily(); }
+      if (d && d.usd) { DAILY.usd = d.usd; DAILY.date = d.date; if (d.source) DAILY.source = d.source; showDaily(); }
     }).catch(function () {});
     $("daily-use").addEventListener("click", function () {
       rate.value = DAILY.usd;
