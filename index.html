@@ -554,7 +554,7 @@
     var sumCentsNow = 0;
     var usdFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" });
     // Cotação do dia: a tarefa diária reescreve só a linha abaixo.
-    var DAILY = { usd: "5,11", date: "21/10/2026 16:45", source: "Câmbio da fronteira" };
+    var DAILY = { usd: "5,20", date: "26/10/2026 10:00", source: "Câmbio da fronteira" };
 
     /* ---------- Cálculo ---------- */
 
@@ -906,8 +906,14 @@
     } catch (e) {}
     $("conv-rate").addEventListener("input", updateConv);
 
-    $("daily-val").textContent = "R$ " + DAILY.usd;
-    $("daily-meta").textContent = DAILY.source + " · " + DAILY.date;
+    function showDaily() {
+      $("daily-val").textContent = "R$ " + DAILY.usd;
+      $("daily-meta").textContent = DAILY.source + " · " + DAILY.date;
+    }
+    showDaily();
+    fetch("cotacao.json?t=" + Date.now()).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.usd) { DAILY.usd = d.usd; DAILY.date = d.date; showDaily(); }
+    }).catch(function () {});
     $("daily-use").addEventListener("click", function () {
       rate.value = DAILY.usd;
       $("conv-rate").value = DAILY.usd;
