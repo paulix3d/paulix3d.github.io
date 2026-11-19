@@ -922,6 +922,7 @@ function cast(id){
   if(cls==='mage'||cls==='healer'){if(RAISE.includes(id))setAtk('raise',.55);else setAtk('thrust',.42);}
   else setAtk(cls==='archer'?'shoot':(id==='escudo'||id==='aura')?'spellcast':'slash',cls==='archer'?.42:.4);
   const t=aim(160);const tx=t?t.x:P.x+P.ax*50,ty=t?t.y:P.y+P.ay*50;
+  netCast(id,tx,ty);
   const inR=(x,y,r,fn)=>{oreHit(x,y,r);for(const m of mons){if(m.dead||(m.night&&!isNight()))continue;if(Math.hypot(m.x-x,m.y-y)<r+m.r)fn(m);}};
   const shoot=(ang,o)=>{const vx=Math.cos(ang),vy=Math.sin(ang),sp=o.sp||280;projs.push({x:P.x+vx*6,y:P.y-8+vy*6,vx:vx*sp,vy:vy*sp,dmg:o.dmg,life:o.life||.6,kind:'bow',pierce:!!o.pierce,hit:new Set(),big:!!o.big,f:fx(F.arrow,{x:P.x,y:P.y-8,angle:ang,palette:o.pal},9)});};
   switch(id){
@@ -1054,14 +1055,14 @@ function update(dt){
     p.x+=p.vx*wdt;p.y+=p.vy*wdt;p.life-=wdt;
     if(p.f){p.f.wx=p.x;p.f.wy=p.y;}
     if(!land(Math.floor(p.x/T),Math.floor((p.y+8)/T))&&!p.over){}
-    for(const m of mons){if(m.dead||p.hit.has(m)||(m.night&&!night))continue;if(Math.hypot(m.x-p.x,m.y-m.r-p.y+4)<m.r+5){
+    if(!p.ghost)for(const m of mons){if(m.dead||p.hit.has(m)||(m.night&&!night))continue;if(Math.hypot(m.x-p.x,m.y-m.r-p.y+4)<m.r+5){
       p.hit.add(m);
       if(p.kind==='staff'){sfxAdd('pop',p.x,p.y+2,{fps:20});}
       hitMon(m,p.dmg,{kb:p.big?160:70,crit:p.big?.35:.12});
       if(!p.pierce){p.life=0;break;}}}
     if(p.life<=0&&p.f){p.f.stop();p.f.life=.3;}
   }
-  for(const p of projs)if(p.life>0&&oreHit(p.x,p.y+4,3,p.dmg)&&!p.pierce){p.life=0;if(p.f){p.f.stop();p.f.life=.3;}}
+  for(const p of projs)if(p.life>0&&!p.ghost&&oreHit(p.x,p.y+4,3,p.dmg)&&!p.pierce){p.life=0;if(p.f){p.f.stop();p.f.life=.3;}}
   projs=projs.filter(p=>p.life>0);
   for(const d of deco)if(d.k==='dummy'){if(d.hitT>0)d.hitT-=wdt;if(d.wob>0)d.wob-=wdt;}
   for(const d of deco)if(d.ore){if(d.sh>0)d.sh-=wdt;if(d.broken>0){d.broken-=wdt;if(d.broken<=0){d.hp=d.mhp;fx(F.poof,{x:d.x,y:d.y},.6);}}}
@@ -2417,6 +2418,7 @@ function netStart(){if(!netAvailable()||NET.ch)return;let sala='familia';try{sal
     .on('broadcast',{event:'h'},({payload})=>netOnHit(payload))
     .on('broadcast',{event:'k'},({payload})=>netOnKill(payload))
     .on('broadcast',{event:'heal'},({payload})=>netOnHeal(payload))
+    .on('broadcast',{event:'sk'},({payload})=>netOnCast(payload))
     .subscribe(st=>{NET.on=st==='SUBSCRIBED';netStatus(st==='SUBSCRIBED'?null:st==='CHANNEL_ERROR'||st==='TIMED_OUT'?'sem conexão':null);if(NET.on){NET.lastS='';netSend(true);}});
   window.addEventListener('pagehide',()=>{try{ch.send({type:'broadcast',event:'bye',payload:{id:NET.id}});}catch(e){}});}
 function netStatus(err){const el=$('netst');if(!el)return;if(!netAvailable()){el.textContent='';return;}
@@ -2496,10 +2498,37 @@ if(netAvailable()){try{if('serviceWorker' in navigator)navigator.serviceWorker.r
     const ios=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
     if(ios&&!standalone){b.style.display='inline-block';b.textContent='📲 Como instalar';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const m=$('lgwho');if(m)m.textContent='No iPhone: toque em Compartilhar ⬆️ e depois em "Adicionar à Tela de Início"';};}},500);}
 
+// ---- magias das amigas: só o visual (o dano já chega pelo evento 'h') ----
+function netCast(id,tx,ty){netEmit('sk',{pid:NET.id,s:id,x:Math.round(P.x),y:Math.round(P.y),ax:+(P.ax||0).toFixed(2),ay:+(P.ay||1).toFixed(2),tx:Math.round(tx),ty:Math.round(ty)});}
+function netOnCast(p){if(!p||p.pid===NET.id||!P)return;if(Math.hypot(P.x-p.x,P.y-p.y)>420)return;const r=NET.peers[p.pid];
+  if(r){r.atk=.5;r.atkDur=.5;}const {x,y,ax,ay,tx,ty}=p,R=Math.random;
+  const ghost=(ang,big,pal)=>{const vx=Math.cos(ang),vy=Math.sin(ang),sp=big?360:280;projs.push({x:x+vx*6,y:y-8+vy*6,vx:vx*sp,vy:vy*sp,dmg:0,life:.6,kind:'bow',pierce:1,ghost:1,hit:new Set(),big:!!big,f:fx(F.arrow,{x,y:y-8,angle:ang,palette:pal},9)});};
+  const S={expl:'boom',meteoro:'fireball',chuvamet:'fireball',gelo:'ice',raio:'magic',chuva:'bow',tripla:'bow',perf:'bow',cura:'heal',circulo:'spirit',luzdiv:'magic3',barreira:'power',escudo:'power',aura:'power',prov:'alert',sismico:'boom2',terremoto:'boom2',cruzado:'slash2',giro:'whoosh',martelo:'impact'};
+  const vol=Math.max(.15,.6-Math.hypot(P.x-x,P.y-y)/700);snd(S[p.s]||'magic',vol);
+  switch(p.s){
+  case 'giro':fx(F.spinSlash,{x,y,radius:48},.9);break;
+  case 'sismico':{const cx_=x+ax*14,cy_=y+ay*10+2;CFX({k:'crack',x:cx_,y:cy_,r:40,n:9,d:1.4,c1:'#3a2414',c2:'#8a6a44'});CFX({k:'wave',x:cx_,y:cy_,r:60,d:.45,col:'#e8c890',top:1});CFX({k:'dust',x:cx_,y:cy_,d:.7,seed:R()*6});break;}
+  case 'cruzado':CFX({k:'xslash',x:x+ax*20,y:y+ay*20,d:.6,top:1});break;
+  case 'terremoto':fx(F.groundSlam,{x,y:y+2,reach:120},2.4);sfxAdd('ground',x,y+8,{b:1,s:1.4,fps:14});break;
+  case 'chuva':CFX({k:'mark',x:tx,y:ty,r:26,d:.9,col:'#ff5a4a'});for(let i=0;i<9;i++){const ox=tx+(R()-.5)*48,oy=ty+(R()-.5)*26;setTimeout(()=>{if(run)CFX({k:'arrow',x:ox,y:oy,d:1.5});},(.25+i*.07)*1000);}break;
+  case 'perf':ghost(Math.atan2(ay,ax),1,['#1a3a6a','#3a7ad0','#c8e8ff','#ffffff']);break;
+  case 'tripla':{const a=Math.atan2(ay,ax);for(const d of [-.28,0,.28])ghost(a+d);break;}
+  case 'raio':CFX({k:'mark',x:tx,y:ty,r:34,d:1,col:'#6ac8ff'});for(let i=0;i<6;i++){const ox=tx+(R()-.5)*60,oy=ty+(R()-.5)*34;setTimeout(()=>{if(run)CFX({k:'bolt',x:ox,y:oy,d:.35,top:1});},250+i*130);}break;
+  case 'expl':CFX({k:'boom',x:tx,y:ty,d:.65,s:.8,top:1});CFX({k:'crack',x:tx,y:ty+2,r:22,n:7,d:1.1,c1:'#2a140a',c2:'#ff8a3a',glow:'rgba(255,140,40,.9)'});break;
+  case 'meteoro':CFX({k:'rdv',img:'meteoro',x:tx,y:ty+10,d:1.2,s:2.4,ab:1,top:1});setTimeout(()=>{if(run)sfxAdd('ground',tx,ty+12,{b:1,fps:14});},620);break;
+  case 'gelo':fx(F.groundSlam,{x,y:y+2,reach:100,palette:ICE},2.2);CFX({k:'rdv',img:'cristal',x,y,d:.9,s:2.6,top:1});break;
+  case 'chuvamet':for(let i=0;i<3;i++){const ox=tx+(i-1)*26,oy=ty+(R()-.5)*16;setTimeout(()=>{if(run)CFX({k:'rdv',img:'meteoro',x:ox,y:oy+10,d:1.2,s:2.2,ab:1,top:1});},i*280);}break;
+  case 'cura':case 'barreira':case 'aura':fx(F.heal,{x,y:y+1},2);break;
+  case 'circulo':CFX({k:'circle',x,y,r:30,d:7});break;
+  case 'luzdiv':CFX({k:'beam',x:tx,y:ty,d:.8,w:16,top:1});CFX({k:'crack',x:tx,y:ty,r:18,n:6,d:1,c1:'#a07a20',c2:'#fff0a0',glow:'rgba(255,230,140,.9)'});break;
+  case 'prov':CFX({k:'jumpring',x,y,d:.42});setTimeout(()=>{if(!run)return;CFX({k:'crack',x,y:y+2,r:46,n:10,d:1.5,c1:'#6a4a10',c2:'#ffe27a',glow:'rgba(255,215,90,.9)'});CFX({k:'wave',x,y:y+2,r:70,d:.5,col:'#ffd84a',top:1});},420);break;
+  case 'martelo':fx(F.critHit,{x:tx,y:ty,angle:0,height:12},1.2);break;
+  case 'escudo':break;}}
+
 window.netSnapshot=()=>P?{cls,n:P.n,lv:P.lv,x:Math.round(P.x),y:Math.round(P.y),ax:P.ax,ay:P.ay,eq:P.eq,hp:P.hp,mhp:P.mhp,anim:P.atkAnim||'',dead:!!P.dead}:null;
 MSI.slimeKing=MSI.slime1;netUI();
 {bind('bx',()=>openX());bind('bmount',()=>toggleMount());bind('fishb',fishTap);$('xp').addEventListener('click',e=>{if(e.target.id==='xp'||e.target.id==='xclose'){closeX();return;}xPanelClick(e);});$('fishx').addEventListener('click',()=>{fishG=null;$('fishp').style.display='none';});}
-window.__som=AU;window.__game={xdbg:{rain(){weather={k:'tempestade',t:60};},lose(){catLostT=0;},get cat(){return catLost},festa(k){FESTA={k,nome:'Maria'};festaDeco();}},get XS(){return XS},openX,startFish,get portals(){return portals},tpGo,openChest,cast,get P(){return P},talk,get npcs(){return npcs},get deco(){return deco},get drops(){return drops},rollDrop,openBag,equip,get mons(){return mons},setDay(d){day=d},doAttack,doSkill,cam,get fxs(){return fxs}};
+window.__som=AU;window.__game={netCastTest:p=>netOnCast(p),xdbg:{rain(){weather={k:'tempestade',t:60};},lose(){catLostT=0;},get cat(){return catLost},festa(k){FESTA={k,nome:'Maria'};festaDeco();}},get XS(){return XS},openX,startFish,get portals(){return portals},tpGo,openChest,cast,get P(){return P},talk,get npcs(){return npcs},get deco(){return deco},get drops(){return drops},rollDrop,openBag,equip,get mons(){return mons},setDay(d){day=d},doAttack,doSkill,cam,get fxs(){return fxs}};
 })();
 </script>
 </body>
