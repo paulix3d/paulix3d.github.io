@@ -1614,7 +1614,9 @@ function drawBook(){
 }
 // ================= MODO CRIADOR (só pra testar) =================
 let devOn=false,devTaps=[];try{devOn=localStorage.getItem('heroinas_dev')==='1';}catch(e){}
-function devToggle(){devOn=!devOn;try{localStorage.setItem('heroinas_dev',devOn?'1':'0');}catch(e){}$('bdev').style.display=devOn&&run?'flex':'none';if(!devOn){$('dev').style.display='none';if(P){P.god=0;P.noclip=0;P.spdMul=1;recalc();}}
+// modo Criador: no site online só a conta do papai liga
+function devAllowed(){return !(typeof netAvailable==='function'&&netAvailable())||loginId()==='papai';}
+function devToggle(){if(!devOn&&!devAllowed()){if(P)addNum(P.x,P.y-30,'Só o papai liga o modo Criador 🔒','#ffd0a0');return;}devOn=!devOn;try{localStorage.setItem('heroinas_dev',devOn?'1':'0');}catch(e){}$('bdev').style.display=devOn&&run?'flex':'none';if(!devOn){$('dev').style.display='none';if(P){P.god=0;P.noclip=0;P.spdMul=1;recalc();}}
   addNum(P?P.x:0,P?P.y-50:0,devOn?'MODO CRIADOR LIGADO':'modo criador desligado','#ff9af0',true);}
 function setLevel(n){n=Math.max(1,Math.min(60,n));P.lv=n;P.xp=0;P.xpn=Math.floor(100*Math.pow(1.35,n-1));recalc();P.hp=P.mhp;P.mp=P.mmp;fx(F.levelUp,{x:P.x,y:P.y},2);autoEquip();save();drawDev();}
 function drawDev(){const b=(t,f,on)=>'<button class="'+(on?'on':'')+'" data-f="'+f+'">'+t+'</button>';
@@ -2058,7 +2060,7 @@ $('go').addEventListener('click',()=>{auInit();snd('ok',.6,1);setTimeout(()=>{co
   const c=CLS[cls];const IMG=(k,z)=>'<img src="'+UI[k]+'" style="width:'+z+'px;height:'+z+'px">';$('ia').innerHTML=IMG(cls+'_a',46);if(!$('bbook').firstChild)$('bbook').innerHTML=IMG('book',34);
   $('bd').querySelector('span').innerHTML=IMG('dodge',26);$('bbag').innerHTML=IMG('bag',36);if(!$('bpot').querySelector('img'))$('bpot').insertAdjacentHTML('afterbegin',IMG('pot',34));if(!$('coins').querySelector('img'))$('coins').insertAdjacentHTML('afterbegin',IMG('coin',22));
   $('portrait').style.background=c.c;$('portrait').style.borderColor=c.a;
-  {const _r=Math.random;Math.random=seedRand(WORLD_SEED);try{genMap();buildDeco();spawnAll();xSpawnMons();xBuildWorld();}finally{Math.random=_r;}mons.forEach((m,i)=>m.id=i);}buildMini();setTimeout(buildWorldImg,400);drops=[];sfx=[];spawnNpcs();xLoad();P=mkPlayer();recalc();P.hp=P.mhp;P.mp=P.mmp;P.hero=loadHero(cls,P.eq);refreshSkillBtns();xStart();netStart();netStatus();cam.x=P.x-LW/2;cam.y=P.y-LH/2;run=true;talkTo=null;
+  {const _r=Math.random;Math.random=seedRand(WORLD_SEED);try{genMap();buildDeco();spawnAll();xSpawnMons();xBuildWorld();}finally{Math.random=_r;}mons.forEach((m,i)=>m.id=i);}buildMini();setTimeout(buildWorldImg,400);drops=[];sfx=[];spawnNpcs();xLoad();P=mkPlayer();recalc();P.hp=P.mhp;P.mp=P.mmp;P.hero=loadHero(cls,P.eq);refreshSkillBtns();xStart();netStart();netStatus();if(devOn&&!devAllowed()){devOn=false;try{localStorage.setItem('heroinas_dev','0');}catch(e){}$('bdev').style.display='none';P.god=0;P.noclip=0;P.spdMul=1;recalc();}cam.x=P.x-LW/2;cam.y=P.y-LH/2;run=true;talkTo=null;
   addNum(P.x,P.y-40,'Vá pelas pontes ao norte!','#ffe68a',true);
 });
 $('drev').addEventListener('click',()=>{Object.assign(P,{x:60*T,y:67*T,hp:P.mhp,mp:P.mmp,dead:false,inv:2,vx:0,vy:0,shield:0});$('dead').style.display='none';});
