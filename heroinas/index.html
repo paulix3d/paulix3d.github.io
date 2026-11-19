@@ -226,7 +226,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0b0f1e;font-family:
     <div class="cls" data-c="paladin"><div class="hero"><img alt=""></div><b>Paladina</b><small>tanque</small></div>
   </div>
   <button id="go">JOGAR</button>
-  <div id="salaw" style="display:none"><span id="lgwho"></span> <button id="binst" style="display:none;margin-left:6px;padding:3px 9px;border-radius:9px;border:2px solid #7ae88a;background:#173a24;color:#fff;font:800 11px sans-serif">📲 Instalar app</button> <button id="lgoff" style="border:0;background:none;color:#9ab;font:700 11px sans-serif;text-decoration:underline">trocar de conta</button><br>🌐 Sala: <input id="sala" maxlength="20" value="familia"> <small>(todas na mesma sala se encontram)</small></div>
+  <div id="salaw" style="display:none"><span id="lgwho"></span> <button id="binst" style="display:none;margin-left:6px;padding:3px 9px;border-radius:9px;border:2px solid #7ae88a;background:#173a24;color:#fff;font:800 11px sans-serif">📲 Instalar app</button> <button id="lgoff" style="border:0;background:none;color:#9ab;font:700 11px sans-serif;text-decoration:underline">trocar de conta</button></div>
   <div class="hint"><a href="#" id="credbtn" style="color:#8fc8e8">Créditos da arte</a></div>
   <div class="hint">Celular deitado: toque na metade esquerda pra andar, botões à direita.<br>PC: WASD anda · J ataca · K L U O magias · Espaço esquiva · Q poção · I bolsa · M magias · E falar</div>
 </div>
@@ -2409,7 +2409,7 @@ function xKill(m){if(m.t==='slimek')slimeSplit(m);xCheckAch();}
 const NET={on:false,ch:null,id:(()=>{try{let v=sessionStorage.getItem('hr_pid');if(!v){v=Math.random().toString(36).slice(2,10);sessionStorage.setItem('hr_pid',v);}return v;}catch(e){return Math.random().toString(36).slice(2,10);}})(),
   peers:{},last:0,lastS:'',hb:0,sala:'familia',status:'off',log:[]};
 function netAvailable(){return !!(window.supabase&&window.NET_CFG);}
-function netStart(){if(!netAvailable()||NET.ch)return;let sala='familia';try{sala=(($('sala')&&$('sala').value)||'familia').toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,20)||'familia';localStorage.setItem('hr_sala',sala);}catch(e){}
+function netStart(){if(!netAvailable()||NET.ch)return;const sala='familia'; // sala única: todas as meninas se encontram sempre
   NET.sala=sala;if(!NET.cli||!NET.user){netStatus('sem login');return;}
   const ch=NET.cli.channel('heroinas-'+sala,{config:{private:true,broadcast:{self:false,ack:false}}});NET.ch=ch;
   ch.on('broadcast',{event:'p'},({payload})=>netOnState(payload))
@@ -2422,7 +2422,7 @@ function netStart(){if(!netAvailable()||NET.ch)return;let sala='familia';try{sal
     .subscribe(st=>{NET.on=st==='SUBSCRIBED';netStatus(st==='SUBSCRIBED'?null:st==='CHANNEL_ERROR'||st==='TIMED_OUT'?'sem conexão':null);if(NET.on){NET.lastS='';netSend(true);}});
   window.addEventListener('pagehide',()=>{try{ch.send({type:'broadcast',event:'bye',payload:{id:NET.id}});}catch(e){}});}
 function netStatus(err){const el=$('netst');if(!el)return;if(!netAvailable()){el.textContent='';return;}
-  const n=Object.keys(NET.peers).length;el.textContent=err?'🔴 Online: '+err:NET.on?('🟢 Sala "'+NET.sala+'" · '+(n?n+' amiga'+(n>1?'s':'')+' online':'só você por enquanto')):'🟡 conectando...';
+  const n=Object.keys(NET.peers).length;el.textContent=err?'🔴 Online: '+err:NET.on?('🟢 Online · '+(n?n+' amiga'+(n>1?'s':'')+' jogando':'só você por enquanto')):'🟡 conectando...';
   $('bchat').style.display=NET.on?'flex':'none';}
 function netEmit(ev,payload){if(!NET.on||!NET.ch)return;try{NET.ch.send({type:'broadcast',event:ev,payload});}catch(e){}}
 function netMyState(){const eq=SLOTS.map(k=>P.eq[k]||0).join('');
@@ -2473,7 +2473,7 @@ function netUI(){const q=$('chatq');q.innerHTML=QUICK.map(t=>'<button data-q="'+
   $('chatsend').addEventListener('click',e=>{e.stopPropagation();sendTyped();});$('chatin').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')sendTyped();});
   ['pointerdown','touchstart','touchend','click','keydown','keyup'].forEach(ev=>$('chatp').addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
   const op=e=>{e.preventDefault();e.stopPropagation();const c=$('chatp');c.style.display=c.style.display==='flex'?'none':'flex';};$('bchat').addEventListener('click',op);$('bchat').addEventListener('touchend',op);
-  if(netAvailable()){netLogin();$('salaw').style.display='block';try{const s=localStorage.getItem('hr_sala');if(s)$('sala').value=s;}catch(e){}}
+  if(netAvailable()){netLogin();$('salaw').style.display='block';}
   const bf=$('bfull');const fs=e=>{e.preventDefault();e.stopPropagation();const d=document.documentElement;try{if(!document.fullscreenElement){(d.requestFullscreen||d.webkitRequestFullscreen).call(d).then?.(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});}else document.exitFullscreen();}catch(err){}};
   bf.addEventListener('click',fs);}
 
