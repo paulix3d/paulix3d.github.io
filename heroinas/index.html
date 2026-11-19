@@ -143,7 +143,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0b0f1e;font-family:
 #dlgo button{padding:6px 12px;border:none;border-radius:8px;font-weight:900;font-size:12.5px;cursor:pointer;color:#1a1020;background:linear-gradient(#ffe68a,#f2a83a);box-shadow:0 3px 0 #a0601a;display:flex;align-items:center;gap:5px}
 #dlgo button img{width:18px;height:18px;image-rendering:pixelated}
 #dlgo button.g{background:linear-gradient(#a8f08a,#4ab83a);box-shadow:0 3px 0 #2a7a1a}#dlgo button.off{filter:grayscale(1);opacity:.55}#dlgo button.x{background:linear-gradient(#e8dcc8,#bfae90);box-shadow:0 3px 0 #7a6a50}
-#quest{position:absolute;left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 94px);z-index:10;pointer-events:none;display:none;padding:3px 9px;border-radius:9px;background:rgba(8,26,44,.75);border:2px solid #8a6ad8;color:#e8dcff;font-size:11px;font-weight:700;text-shadow:0 1px 0 #000;max-width:210px}
+#quest{position:absolute;left:max(10px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 148px);z-index:10;pointer-events:none;display:none;padding:3px 9px;border-radius:9px;background:rgba(8,26,44,.75);border:2px solid #8a6ad8;color:#e8dcff;font-size:11px;font-weight:700;text-shadow:0 1px 0 #000;max-width:210px}
 #quest b{color:#ffe68a}
 @media (max-height:400px){#dlgp{width:64px;height:64px}#dlgx{font-size:12.5px;min-height:30px}#dlg{border-width:12px}}
 #portrait{pointer-events:auto;cursor:pointer}
@@ -226,7 +226,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0b0f1e;font-family:
     <div class="cls" data-c="paladin"><div class="hero"><img alt=""></div><b>Paladina</b><small>tanque</small></div>
   </div>
   <button id="go">JOGAR</button>
-  <div id="salaw" style="display:none"><span id="lgwho"></span> <button id="lgoff" style="border:0;background:none;color:#9ab;font:700 11px sans-serif;text-decoration:underline">trocar de conta</button><br>🌐 Sala: <input id="sala" maxlength="20" value="familia"> <small>(todas na mesma sala se encontram)</small></div>
+  <div id="salaw" style="display:none"><span id="lgwho"></span> <button id="binst" style="display:none;margin-left:6px;padding:3px 9px;border-radius:9px;border:2px solid #7ae88a;background:#173a24;color:#fff;font:800 11px sans-serif">📲 Instalar app</button> <button id="lgoff" style="border:0;background:none;color:#9ab;font:700 11px sans-serif;text-decoration:underline">trocar de conta</button><br>🌐 Sala: <input id="sala" maxlength="20" value="familia"> <small>(todas na mesma sala se encontram)</small></div>
   <div class="hint"><a href="#" id="credbtn" style="color:#8fc8e8">Créditos da arte</a></div>
   <div class="hint">Celular deitado: toque na metade esquerda pra andar, botões à direita.<br>PC: WASD anda · J ataca · K L U O magias · Espaço esquiva · Q poção · I bolsa · M magias · E falar</div>
 </div>
@@ -705,7 +705,7 @@ function tpGo(pd){if(!pd)return;closeDlg();snd('magic3',.9,1);tpFlash=.6;setTime
 const PORTAL_N={n:'Portal',r:'Teletransporte',H:{}};
 function updPortals(dt){if(tpCd>0)tpCd-=dt;if(tpFlash>0)tpFlash-=dt;if(!P||P.dead||dlgOpen||bagOpen)return;
   for(const pd of portals){const d=Math.hypot(P.x-pd.x,P.y-pd.y-14);
-    if(!tpOn.includes(pd.id)&&d<60){tpOn.push(pd.id);try{localStorage.setItem('hr_portais',JSON.stringify(tpOn));}catch(e){}snd('power',.8,1);addNum(pd.x,pd.y-60,'Portal ativado!','#9af8ff',true);CFX({k:'circle',x:pd.x,y:pd.y,r:30,d:.8,col:'#5af0f0'});}
+    if(!tpOn.includes(pd.id)&&d<60){tpOn.push(pd.id);try{localStorage.setItem(tpKey(),JSON.stringify(tpOn));}catch(e){}snd('power',.8,1);addNum(pd.x,pd.y-60,'Portal ativado!','#9af8ff',true);CFX({k:'circle',x:pd.x,y:pd.y,r:30,d:.8,col:'#5af0f0'});}
     if(d>20)pd.armed=true;
     if(d<12&&pd.armed!==false&&tpCd<=0){pd.armed=false;tpCd=.5;snd('ok',.5,1);
       if(pd.id==='vila'){const op=portals.filter(o=>o.id!=='vila').map(o=>tpOn.includes(o.id)?{t:'🌀 '+o.nome,f:()=>tpGo(o)}:{t:'🔒 '+o.nome,c:'off',f:()=>{snd('cancel',.5,1);$('dlgx').innerHTML='Esse portal ainda está apagado. Vá até lá andando uma vez para acendê-lo!';}});
@@ -1633,7 +1633,7 @@ function devDo(f){
   if(f==='kill')for(const m of mons)if(!m.dead&&Math.hypot(m.x-P.x,m.y-P.y)<200)hitMon(m,99999,{kb:0});
   if(f==='quest'){const l=qList();const i=l.length?l[0]:qAvail()[0];if(i!=null){delete P.qAct[i];P.qDone.push(i);save();}}
   if(f==='reset'){if(confirmReset!==1){confirmReset=1;$('devb').insertAdjacentHTML('beforeend','<div class="dr" style="color:#ff8a8a">Toque de novo em "Apagar progresso" pra confirmar.</div>');return;}
-    try{const all=JSON.parse(localStorage.getItem(SAVE_K)||'{}');delete all[cls];localStorage.setItem(SAVE_K,JSON.stringify(all));}catch(e){}location.reload();return;}
+    try{const all=JSON.parse(localStorage.getItem(saveK())||'{}');delete all[cls];localStorage.setItem(saveK(),JSON.stringify(all));}catch(e){}location.reload();return;}
   if(f==='off'){devToggle();return;}
   if(f==='map'){openMap();return;}
   confirmReset=0;drawDev();}
@@ -1650,9 +1650,13 @@ function forge(n,k,t){const cost=refCost(k,t),r=refOf(k,t);
   for(let i=0;i<6;i++){const a=Math.random()*6.28;fx(F.hitSpark,{x:n.x+18+Math.cos(a)*6,y:n.y-6+Math.sin(a)*4,angle:a,palette:GOLDSL},.6);}sfxAdd('hit',n.x+18,n.y-6,{fps:12});save();
   say(n,'<b>PLIM! PLIM! PLIM!</b> 🔨<br>Pronto: <b>'+itemName(cls,k,t)+'</b><br>'+itemStats(k,t),[{t:'Reforçar mais',c:'g',f:()=>TALK.brasa(n,P.eq[k]===t?null:'bag')}]);}
 // progresso salvo no aparelho
-const SAVE_K='heroinas_save_v1';
-function save(){try{const all=JSON.parse(localStorage.getItem(SAVE_K)||'{}');all[cls]={lv:P.lv,xp:P.xp,xpn:P.xpn,own:P.own,eq:P.eq,pots:P.pots,coins:P.coins,sk:P.sk,ref:P.ref,kills:P.kills,qAct:P.qAct,qDone:P.qDone,qDoneId:P.qDone.map(i=>QUESTS[i]&&QUESTS[i].m).filter(Boolean),qActId:Object.fromEntries(Object.entries(P.qAct).filter(([i])=>QUESTS[i]).map(([i,v])=>[QUESTS[i].m,v]))};localStorage.setItem(SAVE_K,JSON.stringify(all));}catch(e){}}
-function loadSave(){try{return (JSON.parse(localStorage.getItem(SAVE_K)||'{}'))[cls]||null;}catch(e){return null;}}
+const SAVE_K0='heroinas_save_v1';
+// cada menina logada tem o próprio progresso (no mesmo celular também)
+function loginId(){try{return (typeof NET!=='undefined'&&NET.user&&NET.user.email)?NET.user.email.split('@')[0]:'';}catch(e){return '';}}
+function saveK(){const l=loginId();return l?SAVE_K0+'_'+l:SAVE_K0;}
+function tpKey(){const l=loginId();return l?'hr_portais_'+l:'hr_portais';}
+function save(){try{const all=JSON.parse(localStorage.getItem(saveK())||'{}');all[cls]={lv:P.lv,xp:P.xp,xpn:P.xpn,own:P.own,eq:P.eq,pots:P.pots,coins:P.coins,sk:P.sk,ref:P.ref,kills:P.kills,qAct:P.qAct,qDone:P.qDone,qDoneId:P.qDone.map(i=>QUESTS[i]&&QUESTS[i].m).filter(Boolean),qActId:Object.fromEntries(Object.entries(P.qAct).filter(([i])=>QUESTS[i]).map(([i,v])=>[QUESTS[i].m,v]))};localStorage.setItem(saveK(),JSON.stringify(all));}catch(e){}}
+function loadSave(){try{return (JSON.parse(localStorage.getItem(saveK())||'{}'))[cls]||null;}catch(e){return null;}}
 function drawWeapon(bx,by,p){
   const f=p.face,d=p.dir,c=p.wpn;
   if(c==='sword'){if(d==='side'){const x=f>0?bx+10:bx+1;rect(x,by+6,1,8,'#e8eef8');rect(x,by+5,1,1,'#fff');rect(x-1,by+13,3,1,'#c9a03a');rect(x,by+14,1,2,'#6a4428');}
@@ -2142,7 +2146,7 @@ window.__heroSheet=(c,t)=>{const eq={};for(const k of SLOTS)eq[k]=t;return loadH
 // ================= EXTRAS: pets, casa, pesca, fazenda, montaria, visual, diário, festas, chefe de grupo,
 // medalhas, clima, masmorra secreta, Gatitu perdido e partículas redondas =================
 let XS=null;
-function xKey(){return 'hr_extra_'+cls;}
+function xKey(){const l=loginId();return 'hr_extra_'+(l?l+'_':'')+cls;}
 function xLoad(){try{XS=JSON.parse(localStorage.getItem(xKey())||'null');}catch(e){XS=null;}
   XS=Object.assign({pet:null,pets:[],furn:[],hair:null,hairs:['nat'],ach:{},cnt:{},fish:{},farm:[0,0,0,0],keys:[],legend:0,mount:0,mountOn:0},XS||{});}
 function xSave(){try{localStorage.setItem(xKey(),JSON.stringify(XS));}catch(e){}}
@@ -2383,7 +2387,7 @@ function xPanelClick(e){const t=e.target.closest('button');if(!t)return;e.stopPr
 function toggleMount(on){if(!XS.mount)return;XS.mountOn=on==null?!XS.mountOn:on;recalc();snd(XS.mountOn?'power':'whoosh',.6,1);$('bmount').classList.toggle('on',!!XS.mountOn);xSave();}
 
 // ---------- ganchos chamados pelo jogo ----------
-function xStart(){xLoad();if($('bfull'))$('bfull').style.display='none';FESTA=festa();festaDeco();xPetSpawn();catLost=null;catLostT=200;weather={k:'sol',t:150};
+function xStart(){xLoad();try{tpOn=JSON.parse(localStorage.getItem(tpKey())||'["vila"]');}catch(e){tpOn=['vila'];}if($('bfull'))$('bfull').style.display='none';FESTA=festa();festaDeco();xPetSpawn();catLost=null;catLostT=200;weather={k:'sol',t:150};
   $('bx').style.display='flex';$('bmount').style.display=XS.mount?'flex':'none';$('bmount').classList.toggle('on',!!XS.mountOn);recalc();
   if(FESTA)setTimeout(()=>showBanner(FESTA.k==='natal'?'🎄 Feliz Natal na vila!':FESTA.k==='halloween'?'🎃 Dia das bruxas na vila!':FESTA.k==='carnaval'?'🎉 Carnaval na vila!':'🎂 Feliz aniversário, '+FESTA.nome+'!'),1500);}
 function xUpdate(dt){if(!XS)return;updPet(dt);updFish(dt);updWeather(dt);updCatLost(dt);if(banner){banner.life-=dt;if(banner.life<=0)banner=null;}
@@ -2480,6 +2484,15 @@ async function netLogin(){if(!netAvailable())return;const L=$('login');try{NET.c
   $('lgbtn').addEventListener('click',go);$('lgsenha').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')go(e);});
   ['pointerdown','touchstart','touchend','keydown','keyup'].forEach(ev=>L.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
   $('lgoff').addEventListener('click',async()=>{try{await NET.cli.auth.signOut();}catch(e){}location.reload();});}
+
+// ---- virar aplicativo no celular (PWA) ----
+let instEv=null;
+if(netAvailable()){try{if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();instEv=e;const b=$('binst');if(b)b.style.display='inline-block';});
+  window.addEventListener('appinstalled',()=>{const b=$('binst');if(b)b.style.display='none';showBanner&&showBanner('📲 Heroínas instalado no celular!');});
+  setTimeout(()=>{const b=$('binst');if(!b)return;b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();if(instEv){instEv.prompt();try{await instEv.userChoice;}catch(err){}instEv=null;b.style.display='none';}});
+    const ios=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+    if(ios&&!standalone){b.style.display='inline-block';b.textContent='📲 Como instalar';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const m=$('lgwho');if(m)m.textContent='No iPhone: toque em Compartilhar ⬆️ e depois em "Adicionar à Tela de Início"';};}},500);}
 
 window.netSnapshot=()=>P?{cls,n:P.n,lv:P.lv,x:Math.round(P.x),y:Math.round(P.y),ax:P.ax,ay:P.ay,eq:P.eq,hp:P.hp,mhp:P.mhp,anim:P.atkAnim||'',dead:!!P.dead}:null;
 MSI.slimeKing=MSI.slime1;netUI();
