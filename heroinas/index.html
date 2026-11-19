@@ -46,7 +46,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0b0f1e;font-family:
 #hud{position:absolute;left:max(10px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:10;pointer-events:none}
 .card{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(8,26,44,.88),rgba(8,26,44,.6));border:2px solid #2a8ab0;border-radius:10px;padding:5px 10px 6px 5px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
 #portrait{width:34px;height:34px;border-radius:8px;border:2px solid;position:relative;overflow:hidden}
-#portrait:after{content:"";position:absolute;left:8px;top:6px;width:14px;height:12px;background:#f2c7a0;border-radius:3px;box-shadow:0 -5px 0 2px rgba(0,0,0,.35)}
+#portrait.face:after{display:none}#portrait:after{content:"";position:absolute;left:8px;top:6px;width:14px;height:12px;background:#f2c7a0;border-radius:3px;box-shadow:0 -5px 0 2px rgba(0,0,0,.35)}
 .info{display:flex;flex-direction:column;gap:2px;min-width:120px}
 .row1{display:flex;justify-content:space-between;align-items:baseline;color:#fff;font-size:11px;font-weight:700;text-shadow:0 1px 0 #000}
 #hl{color:#ffe68a}
@@ -154,7 +154,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0b0f1e;font-family:
 #xpin{width:min(96vw,760px);max-height:94vh;display:flex;flex-direction:column;background:#2a1c14;border:3px solid #f2c94c;border-radius:14px;color:#fff;font:700 12px "Trebuchet MS",sans-serif;overflow:hidden}
 #xtabs{display:flex;gap:4px;padding:6px;background:#1a110c;flex-wrap:wrap}#xtabs button,#xbody button{border:2px solid #c9962a;background:#4a3020;color:#ffe8a0;border-radius:8px;padding:5px 9px;font:800 12px sans-serif;cursor:pointer}
 #xtabs button.on{background:#c9962a;color:#2a1a0a}#xbody{padding:8px 12px;overflow:auto}#xbody p{margin:2px 0 8px;color:#e8d8c0}#xbody h4{margin:10px 0 4px}
-.xcoins{float:right;color:#ffd84a}.xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}.xgrid.sm{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+.xcoins{text-align:right;color:#ffd84a;margin-bottom:4px}.xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}.xgrid.sm{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
 .xit{background:#3a281c;border:2px solid #5a4030;border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}.xit.on{border-color:#7ae88a;background:#2a3a24}.xit.lk{opacity:.55}.xit.big{max-width:340px;margin:0 auto}
 .xit b{font-size:12px}.xit small{font-size:10.5px;color:#d8c8b0}.xcur{font-style:italic;color:#bfe0ff!important}.xe{font-size:28px;line-height:1.1}.xpic{image-rendering:pixelated;width:48px;height:48px}.xsw{width:30px;height:30px;border-radius:15px;border:2px solid #fff}
 #xroom{width:100%;max-width:480px;display:block;margin:0 auto 8px;image-rendering:pixelated;border:3px solid #7a4a2a;border-radius:8px}.xs{font-size:10.5px;color:#bfa;margin-top:6px}
@@ -1628,24 +1628,29 @@ function closeDlg(){dlgOpen=false;$('dlg').style.display='none';talkTo=null;last
 function talk(){if(!run||P.dead||bagOpen||dlgOpen||!talkTo)return;if(talkTo.act){const a=talkTo.act;talkTo=null;$('btalk').style.display='none';a();return;}snd(Math.random()<.5?'voice':'voice2',.6);const n=talkTo;(TALK[n.id]||(()=>say(n,'Olá!')))(n);}
 const pick=a=>a[Math.random()*a.length|0];
 // missões da Vovó
-const QUESTS=[
- {m:'slime',n:5,txt:'derrotar 5 Slimes na Floresta',c:30,pot:1},
- {m:'goblin',n:4,txt:'derrotar 4 Goblins',c:60},
- {m:'bat',n:5,txt:'derrotar 5 Morcegos',c:60,pot:1},
- {m:'golem',n:2,txt:'derrotar 2 Orcs Guerreiros na Floresta',c:120},
- {m:'wolf',n:3,txt:'derrotar 3 Vampiros (eles só aparecem à noite!)',c:150,pot:1},
- {m:'ogre',n:3,txt:'derrotar 3 Caranguejos no Pântano',c:200},
- {m:'ogre2',n:2,txt:'derrotar 2 Lobos Sombrios no Pântano',c:250,pot:2},
- {m:'yeti',n:3,txt:'derrotar 3 Yetis nas Montanhas Geladas (oeste, depois da ponte da vila)',c:300,pot:2},
- {m:'mago',n:1,txt:'derrotar o Mago das Chamas no canto de cima da Floresta',c:900,pot:3},
- {m:'lich',n:1,txt:'derrotar o Rei Lich no trono das Terras Sombrias',c:1500,pot:3},
- {m:'knight',n:4,txt:'derrotar 4 Cavaleiros Sombrios nas Terras Sombrias (sudeste, depois da ponte da vila)',c:400,pot:2},
- {m:'boss',n:1,txt:'derrotar o REI ORC na arena do Pântano',c:500,item:1},
- {m:'slimek',n:1,txt:'derrotar o Rei Slime Gigante no sul da Floresta (chame as irmãs!)',c:800,pot:3}];
+const QUESTS=[ // em ordem de aventura; lv = nível mínimo para a Vovó oferecer
+ {m:'slime',n:5,lv:1,txt:'derrotar 5 Slimes na Floresta',c:30,pot:1},
+ {m:'bat',n:5,lv:2,txt:'derrotar 5 Morcegos',c:60,pot:1},
+ {m:'goblin',n:4,lv:4,txt:'derrotar 4 Goblins',c:60},
+ {m:'golem',n:2,lv:8,txt:'derrotar 2 Orcs Guerreiros na Floresta',c:120},
+ {m:'wolf',n:3,lv:10,txt:'derrotar 3 Vampiros (eles só aparecem à noite!)',c:150,pot:1},
+ {m:'slimek',n:1,lv:13,txt:'derrotar o Rei Slime Gigante no sul da Floresta (ele abre o Pântano! chame as irmãs)',c:800,pot:3},
+ {m:'ogre',n:3,lv:15,txt:'derrotar 3 Caranguejos no Pântano',c:200},
+ {m:'golem2',n:2,lv:18,txt:'derrotar 2 Orcs Chefes no Pântano',c:240,pot:1},
+ {m:'ogre2',n:2,lv:22,txt:'derrotar 2 Lobos Sombrios no Pântano',c:250,pot:2},
+ {m:'boss',n:1,lv:26,txt:'derrotar o REI ORC na arena do Pântano',c:500,item:1},
+ {m:'mago',n:1,lv:30,txt:'derrotar o Mago das Chamas no canto de cima da Floresta (ele abre as Montanhas Geladas!)',c:900,pot:3},
+ {m:'yeti',n:3,lv:35,txt:'derrotar 3 Yetis nas Montanhas Geladas (oeste, depois da ponte da vila)',c:300,pot:2},
+ {m:'pinguim',n:4,lv:36,txt:'derrotar 4 Pinguins Guerreiros nas Montanhas Geladas',c:320,pot:1},
+ {m:'esqueleto',n:3,lv:40,txt:'derrotar 3 Esqueletos Congelados nas Montanhas Geladas',c:380,pot:2},
+ {m:'yetirei',n:1,lv:42,txt:'derrotar o REI YETI nas Montanhas Geladas (ele abre as Terras Sombrias!)',c:1200,pot:3},
+ {m:'knight',n:4,lv:45,txt:'derrotar 4 Cavaleiros Sombrios nas Terras Sombrias (sudeste, depois da ponte da vila)',c:400,pot:2},
+ {m:'vamp2',n:3,lv:47,txt:'derrotar 3 Vampiros Sombrios nas Terras Sombrias',c:450,pot:2},
+ {m:'lich',n:1,lv:48,txt:'derrotar o Rei Lich no trono das Terras Sombrias (ele abre a Masmorra!)',c:1500,pot:3}];
 const QMAX=3; // quantas missões dá pra fazer ao mesmo tempo
 function qList(){return Object.keys(P.qAct).map(Number).filter(i=>QUESTS[i]).sort((a,b)=>a-b);}
 function qProgI(i){const q=QUESTS[i];return Math.max(0,Math.min(q.n,(P.kills[q.m]||0)-(P.qAct[i]||0)));}
-function qAvail(){const o=[];for(let i=0;i<QUESTS.length&&o.length<QMAX;i++)if(!P.qDone.includes(i))o.push(i);return o;}
+function qAvail(){const o=[];for(let i=0;i<QUESTS.length&&o.length<QMAX;i++)if(!P.qDone.includes(i)&&P.lv>=(QUESTS[i].lv||1))o.push(i);return o;}
 const qShort=q=>{const t=q.txt.replace(/ \(.*\)/,'');return t[0].toUpperCase()+t.slice(1);};
 const qRew=q=>q.c+' moedas'+(q.pot?' + '+q.pot+' poção':'')+(q.item?' + peça nova':'');
 function giveItem(){ // peça nova: até um nível acima do que ela já usa (a de cima fica guardada até liberar)
@@ -1661,7 +1666,7 @@ const TALK={
    if(ready.length){snd('quest',.9,1);let c=0,p=0,it=0;for(const i of ready){const q=QUESTS[i];c+=q.c;p+=q.pot||0;if(q.item)it++;delete P.qAct[i];P.qDone.push(i);}
      P.coins+=c;P.pots=Math.min(POT_MAX,P.pots+p);for(let k=0;k<it;k++)giveItem();fx(F.levelUp,{x:P.x,y:P.y},2);save();
      return say(n,(ready.length>1?'Você completou '+ready.length+' missões! Que orgulho! 🎉':'Você conseguiu! Que orgulho! 🎉')+'<br>Tome: <b>'+c+' moedas</b>'+(p?' e '+p+' poção':'')+(it?' e uma peça especial':'')+'.',[{t:'Ver missões',c:'g',f:()=>TALK.vovo(n)}]);}
-   const av=qAvail();if(!av.length)return say(n,'Você já fez todas as minhas missões, heroína! O reino inteiro conta histórias sobre você. 💜',[]);
+   const av=qAvail();if(!av.length){const nx=QUESTS.find((q,i)=>!P.qDone.includes(i));return say(n,nx?'Ainda não tenho missão pro seu nível. Volte quando chegar no Nível '+nx.lv+', heroína! Enquanto isso, treine com os monstros. 💪':'Você já fez todas as minhas missões, heroína! O reino inteiro conta histórias sobre você. 💜',[]);}
    const act=qList(),off=av.filter(i=>!(i in P.qAct));let txt='';
    if(act.length)txt+='<b>Suas missões:</b><br>'+act.map(i=>{const q=QUESTS[i];return '• '+qShort(q)+' <b>'+qProgI(i)+'/'+q.n+'</b>';}).join('<br>');
    if(off.length)txt+=(act.length?'<br><br>':pick(['Ah, '+P.n+'! ','Que bom te ver! '])+'Tenho pedidos pra você. ')+'Você pode fazer até '+QMAX+' ao mesmo tempo:<br>'+off.map(i=>'• '+QUESTS[i].txt+' <small>('+qRew(QUESTS[i])+')</small>').join('<br>');
@@ -2163,6 +2168,7 @@ $('go').addEventListener('click',()=>{auInit();snd('ok',.6,1);setTimeout(()=>{co
   const c=CLS[cls];const IMG=(k,z)=>'<img src="'+UI[k]+'" style="width:'+z+'px;height:'+z+'px">';$('ia').innerHTML=IMG(cls+'_a',46);if(!$('bbook').firstChild)$('bbook').innerHTML=IMG('book',34);
   $('bd').querySelector('span').innerHTML=IMG('dodge',26);$('bbag').innerHTML=IMG('bag',36);if(!$('bpot').querySelector('img'))$('bpot').insertAdjacentHTML('afterbegin',IMG('pot',34));if(!$('coins').querySelector('img'))$('coins').insertAdjacentHTML('afterbegin',IMG('coin',22));
   $('portrait').style.background=c.c;$('portrait').style.borderColor=c.a;
+  if(window.CAPA&&CAPA[cls]){const pt=$('portrait');pt.style.backgroundImage='url('+CAPA[cls]+')';pt.style.backgroundSize='190%';pt.style.backgroundPosition='50% 8%';pt.style.backgroundRepeat='no-repeat';pt.classList.add('face');}
   {const _r=Math.random;Math.random=seedRand(WORLD_SEED);try{genMap();buildDeco();spawnAll();xSpawnMons();xBuildWorld();}finally{Math.random=_r;}mons.forEach((m,i)=>m.id=i);}buildMini();setTimeout(buildWorldImg,400);drops=[];sfx=[];spawnNpcs();xLoad();P=mkPlayer();recalc();P.hp=P.mhp;P.mp=P.mmp;P.hero=loadHero(cls,P.eq);refreshSkillBtns();xStart();netStart();netStatus();if(devOn&&!devAllowed()){devOn=false;try{localStorage.setItem('heroinas_dev','0');}catch(e){}$('bdev').style.display='none';P.god=0;P.noclip=0;P.spdMul=1;recalc();}cam.x=P.x-LW/2;cam.y=P.y-LH/2;run=true;talkTo=null;
   addNum(P.x,P.y-40,'Vá pelas pontes ao norte!','#ffe68a',true);
 });
