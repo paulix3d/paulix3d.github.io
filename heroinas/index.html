@@ -619,7 +619,7 @@ function buildDeco(){
   // vila: castelo a oeste, casas dos dois lados da rua
   place('castle',46,71,10,8,3,74,34);
   [[51,65],[55.5,65],[64.5,65],[69,65],[52.5,77],[57,77],[63,77],[67.5,77]].forEach(([x,y],i)=>i!==5&&i!==2&&i!==3&&place(H[i%H.length],x,y,4,6,2,25,14));
-  houses.push({k:'pagoda',x:Math.round(66.75*T),y:66*T,hw:38,cd:12}); // castelo flutuante (Desafio das 18h) no lugar das casas amarela e roxa
+  houses.push({k:'pagoda',x:Math.round(66.75*T),y:66*T,hw:26,cd:9}); // castelo flutuante (Desafio das 18h) no lugar das casas amarela e roxa
   deco.push({k:'well',x:62*T,y:70*T+8});
   deco.push({k:'dummy',x:56*T,y:70*T+4});
   const spawnOk=(x,y)=>Math.hypot(x-60*T,y-67*T)>40&&Object.values(NPCDEF).every(n=>Math.hypot(x-n.x*T-10,y-n.y*T)>(n.walk?20:52));
@@ -2955,7 +2955,7 @@ function drawArenaDeco(d,x,y){
     g.save();g.font='9px sans-serif';g.textAlign='center';g.fillText('⚔️',x-5,y-12);g.fillText('🏆',x+5,y-12);g.restore();if(desafOpen()&&Math.random()<.4)glowAt((x+(Math.random()-.5)*24)*2,(y-20)*2,6,'#ffd84a',.8);return true;}
   if(d.k==='aexit'){rect(x-9,y-22,18,22,'#2a2236');rect(x-7,y-20,14,20,'#3a6ad8');glowAt(x*2,(y-10)*2,14,'#6ab8ff',.35+Math.sin(gt*3)*.1);return true;}return false;}
 function arenaInteract(L,near){
-  const pg_=pagoda();if(pg_&&near(pg_,64))L.push({x:pg_.x,y:pg_.y-20,lbl:desafOpen()?'🏯 Entrar no Desafio das 18h':'🏯 Desafio: o castelo abre todo dia às 18h',act:desafEnter});
+  const pg_=pagoda();if(pg_&&near(pg_,48))L.push({x:pg_.x,y:pg_.y-20,lbl:desafOpen()?'🏯 Entrar no Desafio das 18h':'🏯 Desafio: o castelo abre todo dia às 18h',act:desafEnter});
   if(arenaGate&&near(arenaGate,60)){L.push({x:arenaGate.x,y:arenaGate.y,lbl:'⚔️ Entrar na Arena do Castelo Azul',act:()=>{if(!netAvailable()||!NET.on){addNum(P.x,P.y-40,'A arena é só no jogo online','#ffd84a');return;}const a=Math.random()*6.28;xTele((ARENA.x+Math.cos(a)*4)*T+8,(ARENA.y+Math.sin(a)*2.5)*T+8,'⚔️ Arena do Castelo Azul');}});
 }
   if(arenaExit&&near(arenaExit,22))L.push({x:arenaExit.x,y:arenaExit.y,lbl:'🚪 Sair da arena',act:()=>{arenaLeave();}});
@@ -3022,12 +3022,12 @@ let evWarned=0;setInterval(()=>{if(!run||!P)return;const d=new Date();if(d.getHo
 const PGI=new Image();if(window.PAGODE)PGI.src=PAGODE.src;
 let pagLev=0;
 function drawPagoda(x,y){if(!window.PAGODE||!PGI.complete)return;const M=PAGODE,on=desafOpen();pagLev+=((on?1:0)-pagLev)*.02;
-  const fr=Math.floor(gt*2)%M.n,lift=10+pagLev*16+Math.sin(gt*1.3)*3,s=1.15;
-  g.save();g.globalAlpha=.28-pagLev*.08;blob(x,y+2,40-pagLev*6,8,'#0a0a20');g.restore();
-  if(pagLev>.05){g.save();g.globalAlpha=.25*pagLev+Math.sin(gt*4)*.06*pagLev;blob(x,y-lift-70,70,80,'#ffd84a');g.restore();}
+  const fr=Math.floor(gt*2)%M.n,lift=7+pagLev*11+Math.sin(gt*1.3)*2,s=.8; // 30% menor
+  g.save();g.globalAlpha=.28-pagLev*.08;blob(x,y+2,28-pagLev*4,6,'#0a0a20');g.restore();
+  if(pagLev>.05){g.save();g.globalAlpha=.25*pagLev+Math.sin(gt*4)*.06*pagLev;blob(x,y-lift-49,49,56,'#ffd84a');g.restore();}
   g.save();g.setTransform(1,0,0,1,0,0);g.imageSmoothingEnabled=false;const W=M.fw*s,H=M.fh*s;g.drawImage(PGI,fr*M.fw,0,M.fw,M.fh,Math.round(x*2-W/2),Math.round((y-lift)*2-H),Math.round(W),Math.round(H));g.restore();
-  if(pagLev>.05&&Math.random()<.7*pagLev)glowAt((x+(Math.random()-.5)*110)*2,(y-lift-Math.random()*140)*2,7,Math.random()<.5?'#ffd84a':'#fff2a0',.9);
-  if(Math.random()<.08)glowAt((x+(Math.random()-.5)*60)*2,(y-lift+10)*2,4,'#9ad8ff',.6);}
+  if(pagLev>.05&&Math.random()<.7*pagLev)glowAt((x+(Math.random()-.5)*77)*2,(y-lift-Math.random()*98)*2,6,Math.random()<.5?'#ffd84a':'#fff2a0',.9);
+  if(Math.random()<.08)glowAt((x+(Math.random()-.5)*42)*2,(y-lift+7)*2,4,'#9ad8ff',.6);}
 const pagoda=()=>houses.find(h=>h.k==='pagoda'),castelo=()=>houses.find(h=>h.k==='castle');
 let evWasOpen=false;setInterval(()=>{if(!run||!P)return;const o=desafOpen();if(o&&!evWasOpen){showBanner('🏯 O castelo flutuante está brilhando: o DESAFIO DAS 18h está pronto para começar!');snd('alert',.8,1);}evWasOpen=o;},3000);
 
