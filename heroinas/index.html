@@ -2506,13 +2506,17 @@ function netUI(){const q=$('chatq');q.innerHTML=QUICK.map(t=>'<button data-q="'+
 async function netLogin(){if(!netAvailable())return;const L=$('login');try{NET.cli=supabase.createClient(NET_CFG.url,NET_CFG.key,{realtime:{params:{eventsPerSecond:20}}});}catch(e){return;}
   const ok=sess=>{NET.user=sess.user;const n=(sess.user.user_metadata&&sess.user.user_metadata.nome)||sess.user.email.split('@')[0];NET.nome=n.charAt(0).toUpperCase()+n.slice(1);L.style.display='none';$('lgwho').textContent='Olá, '+NET.nome+'! 💜';
     try{NET.cli.realtime.setAuth(sess.access_token);}catch(e){}};
+  // "trocar de conta": liga o botão ANTES de checar a sessão salva (antes ele só era ligado quando não havia login salvo, por isso não funcionava)
+  const sair=async e=>{if(e){e.preventDefault();e.stopPropagation();}if(netLogin.saindo)return;netLogin.saindo=1;$('lgoff').textContent='saindo...';
+    try{await Promise.race([NET.cli.auth.signOut({scope:'local'}),new Promise(r=>setTimeout(r,2500))]);}catch(err){}
+    try{for(const k of Object.keys(localStorage))if(k.startsWith('sb-'))localStorage.removeItem(k);}catch(err){}location.reload();};
+  $('lgoff').addEventListener('click',sair);$('lgoff').addEventListener('touchend',sair);
   try{const {data}=await NET.cli.auth.getSession();if(data&&data.session){ok(data.session);return;}}catch(e){}
   L.style.display='flex';
   const go=async e=>{e&&e.preventDefault();const nome=$('lgnome').value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,''),senha=$('lgsenha').value;if(!nome||!senha){$('lgmsg').textContent='Escreva seu nome e sua senha';return;}
     $('lgmsg').textContent='Entrando...';try{const {data,error}=await NET.cli.auth.signInWithPassword({email:nome+'@heroinas.app',password:senha});if(error||!data.session){$('lgmsg').textContent='Nome ou senha errados 😕';return;}ok(data.session);snd('ok',.7,1);}catch(err){$('lgmsg').textContent='Sem internet agora. Tente de novo.';}};
   $('lgbtn').addEventListener('click',go);$('lgsenha').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')go(e);});
-  ['pointerdown','touchstart','touchend','keydown','keyup'].forEach(ev=>L.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
-  $('lgoff').addEventListener('click',async()=>{try{await NET.cli.auth.signOut();}catch(e){}location.reload();});}
+  ['pointerdown','touchstart','touchend','keydown','keyup'].forEach(ev=>L.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));}
 
 // ---- virar aplicativo no celular (PWA) ----
 let instEv=null;
