@@ -2741,7 +2741,7 @@ function netOnGroupXP(p){if(!p||!NET.pt||p.pt!==NET.pt||!P||P.dead)return;if(Mat
 
 // ================= PRESENTES DO PAPAI (modo criador) =================
 // Ficam guardados no Supabase (tabela "presentes"): chegam mesmo se a menina estiver sem jogar; entram na heroína que ela estiver usando.
-const MENINAS=[['mariaclara','Maria Clara'],['lais','Laís'],['ludmila','Ludmila'],['sofia','Sofia'],['isabela','Isabela']];
+const MENINAS=[['mariaclara','Maria Clara'],['lais','Laís'],['ludmila','Ludmila'],['sofia','Sofia'],['isabela','Isabela'],['guerreira','Conta Guerreira'],['arqueira','Conta Arqueira'],['maga','Conta Maga'],['curandeira','Conta Curandeira'],['paladina','Conta Paladina']];
 function giftForm(){const el=$('giftf');if(!el)return;if(el.innerHTML){el.innerHTML='';return;}
   const sel=(id,opts)=>'<select id="'+id+'" style="border-radius:7px;padding:3px;font:700 12px sans-serif">'+opts.map(([v,t])=>'<option value="'+v+'">'+t+'</option>').join('')+'</select>';
   el.innerHTML='<div class="dr">Para: '+sel('gfp',MENINAS)+' '+sel('gft',[['moedas','🪙 Moedas'],['item','🎽 Item'],['pedras','💎 Pedras']])+'</div>'+
