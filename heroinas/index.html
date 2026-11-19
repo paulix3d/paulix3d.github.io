@@ -2568,6 +2568,7 @@ function drawX(){const tabs=[['pets','🐾 Pets'],['casa','🏠 Casa'],['visual'
       h+='<div class="xit"><span class="xe" style="font-size:30px">'+o.ico+'</span><b>'+o.n+'</b><small>'+o.d+' Ao atacar, você desce.</small>'+(has?'<button data-a="usemt" data-k="'+k+'">'+(on?'Descer':'Montar')+'</button>':P.lv>=o.lv?'<button data-a="buymt" data-k="'+k+'">Comprar · '+o.price+'🪙</button>':'<small>🔒 libera no nível '+o.lv+'</small>')+'</div>';}
     h+='<p class="xs">Dica: o botão da montaria na tela liga e desliga a última que você usou.</p>';}
   {const ex=xExtraBody(xTab);if(ex!=null)h+=ex;}
+  h+='<div style="text-align:center;margin:10px 0 2px"><button data-a="trocaheroi" style="border-color:#7affef">🔄 Trocar de heroína</button></div>';
   B.innerHTML=h;
   if(xTab==='casa')drawRoom($('xroom'));xExtraAfter(xTab);
   B.querySelectorAll('canvas[data-pet]').forEach(c=>{const o=PETS[c.dataset.pet];if(o.img){const M=RDA.petverde,t=c.getContext('2d');t.imageSmoothingEnabled=false;if(M&&PVI.complete)t.drawImage(PVI,0,0,M.fw,M.fh,0,0,48,44);return;}const m=TS[o.ts],im=TSI[o.ts];if(!m||!im)return;const t=c.getContext('2d');t.imageSmoothingEnabled=false;const fr=o.ts==='cat2'?CATF.sitS:0,s=Math.min(48/m.fw*1.6,2.4);t.drawImage(im,fr*m.fw,0,m.fw,m.fh,24-m.ax*s/2,40-m.ay*s/2,m.fw*s/2,m.fh*s/2);});
@@ -2952,6 +2953,7 @@ function xExtraClick(a,k){
   if(a==='dprize'){const D=daily(),m=D.m[+k];if(!m||m.ok||m.p<m.n)return true;m.ok=1;for(const [g_,n] of dailyPrize())P.gems[g_]=(P.gems[g_]||0)+n;try{localStorage.setItem(dailyKey(),JSON.stringify(D));}catch(e){}save();snd('levelup',.7,1.2);addNum(P.x,P.y-40,'Prêmio do dia! '+dailyPrize().map(([g_,n])=>n+' '+GEMS[g_].ico).join(' '),'#ffd84a',true);drawX();return true;}
   if(a==='visit'){const r=(rankCache||[]).find(o=>o.login===k);if(!r)return true;visitFurn=(r.dados.furn||[]).filter(f=>FURN.some(x=>x[0]===f));visitNome=r.nome;snd('ok',.5,1);drawX();return true;}
   if(a==='vback'){visitFurn=null;drawX();return true;}
+  if(a==='trocaheroi'){backToMenu();return true;}
   if(a==='btnsz'){btnScale(+k);snd('ok',.5,1);drawX();return true;}
   return false;}
 
@@ -3116,6 +3118,13 @@ function devOnline(){const el=document.getElementById('devon');if(!el||document.
   const h='<div class="dr" style="font-weight:900;color:#9affb0">👀 Online agora: '+ps.length+'</div>'+(ps.length?ps.map(([id,r])=>'<div class="dr" style="justify-content:space-between;gap:6px"><span>'+(r.s.d?'💤 ':'')+'<b>'+esc(r.s.n)+'</b> · '+(CLS[r.s.c]?CLS[r.s.c].n:'')+' Nv '+r.s.lv+'<br><small>'+placeName(r.tx,r.ty)+' · ❤ '+r.s.hp+'/'+r.s.mhp+'</small></span><button data-go="'+id+'">Ir até ela</button></div>').join(''):'<div class="dr"><small>Ninguém online além de você.</small></div>');
   if(el._h!==h){el._h=h;el.innerHTML=h;el.querySelectorAll('[data-go]').forEach(b_=>b_.onclick=()=>{const r=NET.peers[b_.dataset.go];if(r){xTele(r.tx+18,r.ty+6,'Perto de '+r.s.n);}});}}
 setInterval(()=>{if(loginId()==='papai')devOnline();},1000);
+
+// volta para a tela de escolher a heroína (salva tudo antes)
+function backToMenu(){if(!run)return;if(inDesaf())desafLeave(false);if(inArena())PVP.on=false;try{evClear();}catch(e){}
+  save();xSave();cloudDirty();cloudPush();try{if(NET.ch)NET.ch.send({type:'broadcast',event:'bye',payload:{id:NET.id}});}catch(e){}
+  run=false;for(const id of ['xp','bag','dlg','dead','bigmap','dev','volp','fishp','chatp','ginv','tut'])if($(id))$(id).style.display='none';
+  for(const id of ['hud','btns','topr','touch','bbag','bpot','coins','bbook','bx','bmount','bchat','bsom','bdev','quest'])if($(id))$(id).style.display='none';
+  bagOpen=false;dlgOpen=false;bookOpen=false;$('menu').style.display='flex';snd('move',.5,1);setTimeout(menuStats,50);}
 
 window.netSnapshot=()=>P?{cls,n:P.n,lv:P.lv,x:Math.round(P.x),y:Math.round(P.y),ax:P.ax,ay:P.ay,eq:P.eq,hp:P.hp,mhp:P.mhp,anim:P.atkAnim||'',dead:!!P.dead}:null;
 MSI.slimeKing=MSI.slime1;netUI();
