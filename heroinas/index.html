@@ -2292,8 +2292,13 @@ const PVI=new Image();if(window.RDA&&RDA.petverde)PVI.src=RDA.petverde.src;
 let petD=null;
 function xPetSpawn(){deco=deco.filter(d=>d.k!=='pet');petD=null;if(!XS.pet||!PETS[XS.pet])return;petD={k:'pet',t:XS.pet,x:P.x-14,y:P.y+4,f:1,ph:0,mv:0};deco.push(petD);}
 function petFight(dt){const d=petD;d.cd=(d.cd||0)-dt;if(d.atk>0){d.atk-=dt;return;}if(d.cd>0)return;let best=null,bd=60;for(const m of mons){if(m.dead||m.night&&!isNight())continue;const q=Math.hypot(m.x-d.x,m.y-d.y);if(q<bd){bd=q;best=m;}}
-  if(!best)return;d.cd=1.7;d.atk=.45;d.f=best.x>d.x?1:-1;d.dx=best.x-d.x;d.dy=0;d.x+=(best.x-d.x)*.5;d.y+=(best.y-d.y)*.5;hitMon(best,6+P.lv*1.5,{crit:.05});netPetAtk(best);snd('slash',.35,1.4);
+  if(!best)return;d.cd=1.7;d.atk=.45;d.f=best.x>d.x?1:-1;d.dx=best.x-d.x;d.dy=0;d.x+=(best.x-d.x)*.5;d.y+=(best.y-d.y)*.5;hitMon(best,6+P.lv*1.5,{crit:.05});d.hits=(d.hits||0)+1;const lf=d.hits%3===0;netPetAtk(best,lf);snd('slash',.35,1.4);
+  if(lf){leafFx(best.x,best.y);for(const m of mons){if(m.dead||m===best||(m.night&&!isNight()))continue;if(Math.hypot(m.x-best.x,m.y-best.y)<46)hitMon(m,(6+P.lv*1.5)*1.6,{kb:70,crit:.1});}hitMon(best,(6+P.lv*1.5)*.8,{kb:50});}
   for(let i=0;i<4;i++)CFX({k:'dust',x:best.x+(Math.random()-.5)*14,y:best.y-6,d:.4,seed:Math.random()*6,col:'#7ad04a'});}
+// a cada 3 golpes o gatinho verde solta a Tempestade de Folhas (acerta todos em volta)
+function leafFx(x,y){snd('whoosh',.6,1.2);CFX({k:'wave',x,y,r:46,d:.5,col:'#7ad04a',top:1});CFX({k:'circle',x,y,r:40,d:.6,col:'#9aff6a'});
+  for(let i=0;i<12;i++){const a=i/12*6.28;setTimeout(()=>{if(!run)return;CFX({k:'dust',x:x+Math.cos(a)*30,y:y+Math.sin(a)*18-4,d:.5,seed:Math.random()*6,col:i%2?'#7ad04a':'#c8f04a'});},i*30);}
+  addNum(x,y-30,'🍃 Tempestade de Folhas!','#9aff6a',true);}
 function updPet(dt){if(!petD)return;const o=PETS[petD.t];petD.ph+=dt;if(petD.t==='verde'&&!P.dead)petFight(dt);if(petD.atk>0)return;const tx=P.x-(P.ax||0)*16-8,ty=P.y-(P.ay||0)*10+3,dx=tx-petD.x,dy=ty-petD.y,d=Math.hypot(dx,dy);
   if(d>200){petD.x=tx;petD.y=ty;}if(d>10){const sp=Math.min(d*3,140);petD.x+=dx/d*sp*dt;petD.y+=dy/d*sp*dt;petD.mv=1;petD.dx=dx;petD.dy=dy;if(Math.abs(dx)>1)petD.f=dx>0?1:-1;}else petD.mv=0;}
 function drawPet(d,x,y){const o=PETS[d.t];if(!o)return;const fly=o.fly?10+Math.sin(gt*5)*2:0;
@@ -2661,9 +2666,9 @@ function netPetFollow(r,dt){const t=r.s&&r.s.pet;if(!t||!PETS[t]){r.pet=null;ret
   if(!r.pet||r.pet.t!==t)r.pet={k:'pet',t,x:r.x-14,y:r.y+4,f:1,ph:0,mv:0};const d_=r.pet;d_.ph+=dt;if(d_.atk>0){d_.atk-=dt;return;}
   const f=r.s.f||1,tx=r.x-f*14,ty=r.y+3,dx=tx-d_.x,dy=ty-d_.y,d=Math.hypot(dx,dy);
   if(d>200){d_.x=tx;d_.y=ty;}if(d>10){const sp=Math.min(d*3,140);d_.x+=dx/d*sp*dt;d_.y+=dy/d*sp*dt;d_.mv=1;d_.dx=dx;d_.dy=dy;if(Math.abs(dx)>1)d_.f=dx>0?1:-1;}else d_.mv=0;}
-function netPetAtk(m){if(NET.on&&petD)netEmit('pa',{pid:NET.id,x:Math.round(m.x),y:Math.round(m.y)});}
+function netPetAtk(m,lf){if(NET.on&&petD)netEmit('pa',{pid:NET.id,x:Math.round(m.x),y:Math.round(m.y),lf:lf?1:0});}
 function netOnPetAtk(p){const r=NET.peers[p.pid];if(!r||!r.pet||!P||Math.hypot(P.x-p.x,P.y-p.y)>420)return;const d=r.pet;d.atk=.45;d.f=p.x>d.x?1:-1;d.dx=p.x-d.x;d.dy=0;d.x+=(p.x-d.x)*.5;d.y+=(p.y-d.y)*.5;
-  for(let i=0;i<4;i++)CFX({k:'dust',x:p.x+(Math.random()-.5)*14,y:p.y-6,d:.4,seed:Math.random()*6,col:'#7ad04a'});}
+  for(let i=0;i<4;i++)CFX({k:'dust',x:p.x+(Math.random()-.5)*14,y:p.y-6,d:.4,seed:Math.random()*6,col:'#7ad04a'});if(p.lf)leafFx(p.x,p.y);}
 // ---- ataque normal das amigas (espada, arco, cajado): só o visual ----
 function netAtk(w,fin,rev){netEmit('a',{pid:NET.id,w,f:fin?1:0,rv:rev,x:Math.round(P.x),y:Math.round(P.y),ax:+(P.ax||0).toFixed(2),ay:+(P.ay||1).toFixed(2)});}
 function netOnAtk(p){if(!p||p.pid===NET.id||!P)return;const dist=Math.hypot(P.x-p.x,P.y-p.y);if(dist>420)return;const r=NET.peers[p.pid];
