@@ -1818,6 +1818,7 @@ function drawMobSpr(m,k,x,y,fl){
   g.restore();
 }
 function drawMon(m,x,y){
+  if(m.gold&&!m.dead){g.save();g.globalAlpha=.35+Math.sin(gt*5)*.1;blob(x,y-5,11,8,'#ffd84a');g.restore();if(Math.random()<.4)glowAt((x+(Math.random()-.5)*16)*2,(y-4-Math.random()*12)*2,5,'#fff2a0',.8);}
   const fl=m.ht>0,[c1,c2,c3]=m.pal,C=fl?'#fff':c1,D=fl?'#fff':c2,t=m.anim,f=m.face;
   const wind=m.st==='wind';const wx=wind?((gt*40|0)%2)-.5:0;
   if(m.stun>0){for(let i=0;i<3;i++){const a=gt*5+i*2.1;rect(x+Math.cos(a)*8,y-m.r*2-6+Math.sin(a)*2,2,2,'#ffe24a');}}
@@ -2350,7 +2351,7 @@ function startFish(){if(fishG)return;closeDlg&&dlgOpen&&closeDlg();fishG={pos:0,
 function fishTap(){if(!fishG)return;const in_=Math.abs(fishG.pos-fishG.zone)<fishG.w/2;
   if(in_){fishG.hits++;snd('hit',.6,1.4);fishG.zone=.15+Math.random()*.7;fishG.sp+=.35;fishG.w*=.88;}else{fishG.miss++;snd('cancel',.5,1);}
   if(fishG.hits>=3){const tot=FISH.reduce((a,f)=>a+f[4],0);let r=Math.random()*tot,f=FISH[0];for(const x of FISH){r-=x[4];if(r<=0){f=x;break;}}
-    XS.fish[f[0]]=(XS.fish[f[0]]||0)+1;P.coins+=f[3];xCount('fish');save();$('fishmsg').innerHTML='🎣 Você pescou um <b style="color:'+f[2]+'">'+f[1]+'</b>! +'+f[3]+' moedas';snd(f[0]==='arco'?'levelup':'coin',.9,1);fishG.done=1.6;}
+    XS.fish[f[0]]=(XS.fish[f[0]]||0)+1;P.coins+=f[3];xCount('fish');{const gg=f[0]==='arco'?'r':f[0]==='dourado'?'o':Math.random()<.25?(Math.random()<.5?'p':'b'):null;if(gg){P.gems[gg]=(P.gems[gg]||0)+1;setTimeout(()=>addNum(P.x,P.y-40,'+1 '+GEMS[gg].ico+' '+GEMS[gg].n,GEMS[gg].c,true),700);}}save();$('fishmsg').innerHTML='🎣 Você pescou um <b style="color:'+f[2]+'">'+f[1]+'</b>! +'+f[3]+' moedas';snd(f[0]==='arco'?'levelup':'coin',.9,1);fishG.done=1.6;}
   else if(fishG.miss>=3){$('fishmsg').textContent='O peixe escapou... tente de novo!';fishG.done=1.4;}}
 function updFish(dt){if(!fishG)return;if(fishG.done){fishG.done-=dt;if(fishG.done<=0){fishG=null;$('fishp').style.display='none';}return;}
   fishG.pos+=fishG.dir*fishG.sp*dt*.6;if(fishG.pos>1){fishG.pos=1;fishG.dir=-1;}if(fishG.pos<0){fishG.pos=0;fishG.dir=1;}
@@ -2478,7 +2479,7 @@ function xInteract(){const L=[];if(!P)return L;const near=(o,r)=>Math.hypot(P.x-
 function xTele(x,y,nome){snd('magic3',.8,1);tpFlash=.6;setTimeout(()=>{P.x=x;P.y=y;P.vx=P.vy=0;cam.x=P.x-LW/2;cam.y=P.y-LH/2;addNum(P.x,P.y-36,nome,'#c8a8ff',true);},250);}
 function usePlot(p){const st=plotStage(p.i);if(st<0){if(P.coins<5){addNum(P.x,P.y-30,'precisa de 5 moedas','#ff9a9a');return;}P.coins-=5;XS.farm[p.i]=Date.now();snd('ok',.6,1);addNum(p.x,p.y-16,'Plantou! 🌱','#9aff8a');}
   else if(st<3){addNum(p.x,p.y-16,'Ainda crescendo...','#cfe8b0');return;}
-  else{XS.farm[p.i]=0;if(P.pots<POT_MAX){P.pots++;addNum(p.x,p.y-18,'+1 Poção de fruta 🍓','#ff8aa8',true);}else{P.coins+=15;addNum(p.x,p.y-18,'+15 moedas 🍓','#ffd84a',true);}snd('bonus',.7,1.1);xCount('harvest');}
+  else{XS.farm[p.i]=0;if(P.pots<POT_MAX){P.pots++;addNum(p.x,p.y-18,'+1 Poção de fruta 🍓','#ff8aa8',true);}else{P.coins+=15;addNum(p.x,p.y-18,'+15 moedas 🍓','#ffd84a',true);}snd('bonus',.7,1.1);xCount('harvest');if(Math.random()<.3){P.gems.p=(P.gems.p||0)+1;addNum(p.x,p.y-30,'+1 ⚪ Prata','#dfe6f0');save();}}
   xSave();save();}
 function openLegend(){if(XS.keys.length<3){addNum(P.x,P.y-30,'Faltam chaves! ('+XS.keys.length+'/3)','#ffd84a');snd('cancel',.5,1);return;}
   XS.legend=1;P.coins+=300;P.pots=POT_MAX;{const free=SLOTS.filter(k=>!P.own[k].includes(4));if(free.length){const k=pick(free);P.own[k].push(4);setTimeout(()=>toast(k,4,'LENDÁRIA: '+itemName(cls,k,4),P.lv>=50?itemStats(k,4):'fica na mochila até o Nível 50'),900);}}if(!XS.hairs.includes('arco'))XS.hairs.push('arco');xSave();save();snd('chest',1,1);setTimeout(()=>snd('levelup',.9,1),500);
@@ -2494,7 +2495,7 @@ function drawX(){const tabs=[['pets','🐾 Pets'],['casa','🏠 Casa'],['visual'
   if(xTab==='pets'){h+='<p>Um amiguinho que anda sempre com você.</p><div class="xgrid">'+Object.entries(PETS).map(([k,o])=>{const has=XS.pets.includes(k),on=XS.pet===k;
       return '<div class="xit'+(on?' on':'')+'"><canvas class="xpic" data-pet="'+k+'" width="48" height="48"></canvas><b>'+o.n+'</b>'+(k==='verde'?'<small>🍃 ajuda a lutar!</small>':'')+(has?'<button data-a="pet" data-k="'+k+'">'+(on?'Guardar':'Levar junto')+'</button>':'<button data-a="buypet" data-k="'+k+'">Adotar · '+o.price+'🪙</button>')+'</div>';}).join('')+'</div>';}
   else if(xTab==='casa'){h+='<canvas id="xroom"></canvas><div class="xgrid sm">'+FURN.map(([k,e,n,p])=>{const has=XS.furn.includes(k);return '<div class="xit'+(has?' on':'')+'"><span class="xe">'+e+'</span><b>'+n+'</b>'+(has?'<button data-a="unfurn" data-k="'+k+'">Tirar</button>':'<button data-a="furn" data-k="'+k+'">'+p+'🪙</button>')+'</div>';}).join('')+'</div><p class="xs">No online, as irmãs vão poder visitar a casa uma da outra.</p>';}
-  else if(xTab==='visual'){h+='<p>Cor do cabelo da '+P.n+'. Só muda o visual, não a força.</p><div class="xgrid sm">'+Object.entries(HAIRC).map(([k,[n,c]])=>{const has=XS.hairs.includes(k)||k==='nat',on=(XS.hair||'nat')===k;
+  else if(xTab==='visual'){h+='<p>Tamanho dos botões: '+BTN_SZ.map(([v,n])=>'<button data-a="btnsz" data-k="'+v+'"'+(Math.abs(btnScale()-v)<.01?' style="background:#5a8a3a"':'')+'>'+n+'</button>').join(' ')+'</p><p>Cor do cabelo da '+P.n+'. Só muda o visual, não a força.</p><div class="xgrid sm">'+Object.entries(HAIRC).map(([k,[n,c]])=>{const has=XS.hairs.includes(k)||k==='nat',on=(XS.hair||'nat')===k;
       return '<div class="xit'+(on?' on':'')+'"><span class="xsw" style="background:'+(c||'linear-gradient(135deg,#6a3a1e,#e8b84a)')+(k==='arco'?';background:linear-gradient(90deg,#ff4a6a,#ffd83a,#5ae07a,#3ab8ff,#b86aff)':'')+'"></span><b>'+n+'</b>'+(has?'<button data-a="hair" data-k="'+k+'">'+(on?'Usando':'Usar')+'</button>':k==='arco'?'<small>🔒 baú lendário</small>':'<button data-a="buyhair" data-k="'+k+'">'+(HAIRP[k]||50)+'🪙</button>')+'</div>';}).join('')+'</div>';}
   else if(xTab==='diario'){const L=Object.entries(MT);h+='<p>Cada monstro derrotado entra no diário.</p><div class="xgrid sm">'+L.map(([k,m])=>{const n=(P.kills[k]||0);return '<div class="xit'+(n?'':' lk')+'"><canvas class="xpic" data-mob="'+k+'" width="48" height="48"></canvas><b>'+(n?m.n:'???')+'</b><small>'+(n?'derrotados: '+n:'ainda não encontrado')+'</small>'+(n?'<small class="xcur">'+(CURIO[k]||'')+'</small>':'')+'</div>';}).join('')+'</div>'+
       '<h4>🎣 Peixes</h4><div class="xgrid sm">'+FISH.map(([k,n,c,v])=>'<div class="xit'+(XS.fish[k]?'':' lk')+'"><span class="xe" style="color:'+c+'">🐟</span><b>'+(XS.fish[k]?n:'???')+'</b><small>'+(XS.fish[k]?'pescados: '+XS.fish[k]+' · vale '+v+'🪙':'')+'</small></div>').join('')+'</div>';}
@@ -2527,7 +2528,7 @@ function xPanelClick(e){const t=e.target.closest('button');if(!t)return;e.stopPr
 function toggleMount(on){if(!hasMount())return;XS.mountOn=on==null?!XS.mountOn:on;recalc();snd(XS.mountOn?'power':'whoosh',.6,1);$('bmount').classList.toggle('on',!!XS.mountOn);xSave();}
 
 // ---------- ganchos chamados pelo jogo ----------
-function xStart(){xLoad();try{tpOn=JSON.parse(localStorage.getItem(tpKey())||'["vila"]');}catch(e){tpOn=['vila'];}if($('bfull'))$('bfull').style.display='none';FESTA=festa();festaDeco();xPetSpawn();catLost=null;catLostT=200;weather={k:'sol',t:150};
+function xStart(){xLoad();setTimeout(tutStart,1800);weekendGold();btnScale();try{tpOn=JSON.parse(localStorage.getItem(tpKey())||'["vila"]');}catch(e){tpOn=['vila'];}if($('bfull'))$('bfull').style.display='none';FESTA=festa();festaDeco();xPetSpawn();catLost=null;catLostT=200;weather={k:'sol',t:150};
   $('bx').style.display='flex';$('bmount').style.display=hasMount()?'flex':'none';$('bmount').textContent=(MOUNTS[XS.mk]||MOUNTS.nuvem).ico;$('bmount').classList.toggle('on',!!XS.mountOn);recalc();
   if(FESTA)setTimeout(()=>showBanner(FESTA.k==='natal'?'🎄 Feliz Natal na vila!':FESTA.k==='halloween'?'🎃 Dia das bruxas na vila!':FESTA.k==='carnaval'?'🎉 Carnaval na vila!':'🎂 Feliz aniversário, '+FESTA.nome+'!'),1500);}
 function xUpdate(dt){if(!XS)return;updPet(dt);updFish(dt);updWeather(dt);updCatLost(dt);if(banner){banner.life-=dt;if(banner.life<=0)banner=null;}
@@ -2538,7 +2539,7 @@ function xDraw(d,x,y){if(d.k==='pet'){drawPet(d,x,y);return true;}if(d.k==='plot
 function xOverlay(ox,oy,nightK){drawCatLost(ox,oy);if(typeof myBubble!=='undefined'&&myBubble){myBubble.t-=1/60;const x=P.x-ox,y=P.y-oy;g.save();g.font='800 7px "Trebuchet MS",sans-serif';g.textAlign='center';const bw=Math.min(120,g.measureText(myBubble.txt).width+8);g.fillStyle='rgba(255,240,180,.95)';g.fillRect(x-bw/2,y-50,bw,11);g.fillStyle='#2a1a0a';g.fillText(myBubble.txt,x,y-42);g.restore();if(myBubble.t<=0)myBubble=null;}drawWeather(ox,oy);drawFesta(ox,oy);
   if(banner){const a=Math.min(1,banner.life*2,(3.2-banner.life)*4);g.save();g.globalAlpha=a;g.font='900 11px "Trebuchet MS",sans-serif';g.textAlign='center';const w=g.measureText(banner.t).width+20;
     g.fillStyle='rgba(20,12,40,.85)';g.fillRect(LW/2-w/2,LH-58,w,18);g.strokeStyle='#f2c94c';g.strokeRect(LW/2-w/2+.5,LH-57.5,w-1,17);g.fillStyle='#ffe8a0';g.fillText(banner.t,LW/2,LH-45);g.restore();}}
-function xKill(m){if(m.t==='slimek')slimeSplit(m);xCheckAch();}
+function xKill(m){if(m.t==='slimek')slimeSplit(m);goldKill(m);xCheckAch();}
 
 // ================= ONLINE (Supabase Realtime, canal de broadcast; não usa tabelas) =================
 // Cada aparelho manda o próprio estado ~3x por segundo só quando muda; os outros desenham a heroína com interpolação.
@@ -2561,6 +2562,7 @@ function netStart(){if(!netAvailable()||NET.ch)return;const sala='familia'; // s
     .on('broadcast',{event:'m'},({payload})=>netOnMons(payload))
     .on('broadcast',{event:'ms'},({payload})=>netOnMonStrike(payload))
     .on('broadcast',{event:'env'},({payload})=>netOnEnv(payload))
+    .on('broadcast',{event:'gitem'},({payload})=>netOnGiftItem(payload))
     .on('broadcast',{event:'gift'},({payload})=>netOnGift(payload))
     .on('broadcast',{event:'ginv'},({payload})=>netOnInvite(payload))
     .on('broadcast',{event:'gacc'},({payload})=>netOnAccept(payload))
@@ -2740,7 +2742,7 @@ function netOnMonStrike(p){if(!P)return;const m=mons.find(o=>o.id===p.m);if(!m||
 
 // ================= PRESENTE DE MOEDAS E GRUPO =================
 function netQuick(){const q=$('chatq');q.innerHTML=QUICK.map(t=>'<button data-q="'+t+'">'+t+'</button>').join('')+
-  (netAvailable()?'<button data-act="gift" style="border-color:#e8b84a;background:#4a3410">🎁 Dar moedas</button><button data-act="grupo" style="border-color:#e86ac8;background:#4a1a3a">👥 Grupo'+(NET.pt?' ('+grpMembers().length+')':'')+'</button>':'');}
+  (netAvailable()?'<button data-act="gift" style="border-color:#e8b84a;background:#4a3410">🎁 Dar moedas</button><button data-act="items" style="border-color:#7ae88a;background:#173a24">🎽 Dar item</button><button data-act="grupo" style="border-color:#e86ac8;background:#4a1a3a">👥 Grupo'+(NET.pt?' ('+grpMembers().length+')':'')+'</button>':'');}
 const lvOk=(a,b)=>{const lo=Math.min(a,b);return Math.abs(a-b)<=(lo<10?5:10);}; // abaixo do 10: até 5 níveis de diferença; depois: até 10
 function nearPeers(r){return Object.entries(NET.peers).filter(([id,p])=>p.s&&!p.s.d&&Math.hypot(p.tx-P.x,p.ty-P.y)<(r||160));}
 function grpMembers(){return NET.pt?Object.entries(NET.peers).filter(([id,p])=>p.s&&p.s.pt===NET.pt):[];}
@@ -2751,6 +2753,9 @@ function netAct(d){const q=$('chatq'),back='<button data-act="back">⬅ Voltar</
   if(d.act==='back'){netQuick();return;}
   if(d.act==='gift'){const ps=nearPeers();const left=GIFT_DIA-giftSent();
     q.innerHTML=back+'<div style="width:100%;font:700 11px sans-serif">🎁 Dar moedas para quem está pertinho (hoje ainda pode dar '+Math.max(0,left)+')</div>'+(ps.length?ps.map(([id,p])=>[50,100,200,500].filter(v=>v<=left&&v<=P.coins).map(v=>'<button data-act="give" data-id="'+id+'" data-v="'+v+'">'+esc(p.s.n)+' · '+v+' 🪙</button>').join('')||'<small>'+esc(p.s.n)+': sem moedas ou limite do dia</small>').join(''):'<small>Chegue perto de uma amiga primeiro.</small>');return;}
+  if(d.act==='items'){const ps=nearPeers();q.innerHTML=back+'<div style="width:100%;font:700 11px sans-serif">🎽 Dar uma peça da mochila (só o que ela já pode vestir)</div>'+(ps.length?ps.map(([id,p])=>'<div style="width:100%;font:800 11px sans-serif;color:#9affb0">Para '+esc(p.s.n)+' (Nv '+p.s.lv+'):</div>'+itemGiftMenu(id)).join(''):'<small>Chegue perto de uma amiga primeiro.</small>');return;}
+  if(d.act==='gitem'){const p=NET.peers[d.id],k=d.k,t=+d.t;if(!p||!P.own[k]||!P.own[k].includes(t)||t===P.eq[k]||TIER_LV[t]>p.s.lv)return netQuick();const r=refOf(k,t),nm=itemName(cls,k,t);P.own[k]=P.own[k].filter(x=>x!==t);delete P.ref[k+t];save();
+    netEmit('gitem',{to:d.id,from:NET.id,n:NET.nome||P.n,k,t,r});addNum(P.x,P.y-36,'🎽 Deu '+nm+' para '+p.s.n,'#9affb0',true);snd('ok',.7,1.2);netQuick();$('chatp').style.display='none';return;}
   if(d.act==='give'){const v=+d.v,p=NET.peers[d.id];if(!p||v>P.coins||giftSent()+v>GIFT_DIA)return netQuick();P.coins-=v;coinPop=.25;try{localStorage.setItem(giftKey(),giftSent()+v);}catch(e){}save();
     netEmit('gift',{to:d.id,from:NET.id,n:NET.nome||P.n,v});addNum(P.x,P.y-36,'🎁 Deu '+v+' moedas para '+p.s.n,'#ffd84a',true);snd('coin',.7);netQuick();$('chatp').style.display='none';return;}
   if(d.act==='grupo'){const ms=grpMembers(),ps=nearPeers(220).filter(([id,p])=>p.s.pt!==NET.pt||!NET.pt);
@@ -2880,6 +2885,7 @@ function xExtraClick(a,k){
   if(a==='dprize'){const D=daily(),m=D.m[+k];if(!m||m.ok||m.p<m.n)return true;m.ok=1;for(const [g_,n] of dailyPrize())P.gems[g_]=(P.gems[g_]||0)+n;try{localStorage.setItem(dailyKey(),JSON.stringify(D));}catch(e){}save();snd('levelup',.7,1.2);addNum(P.x,P.y-40,'Prêmio do dia! '+dailyPrize().map(([g_,n])=>n+' '+GEMS[g_].ico).join(' '),'#ffd84a',true);drawX();return true;}
   if(a==='visit'){const r=(rankCache||[]).find(o=>o.login===k);if(!r)return true;visitFurn=(r.dados.furn||[]).filter(f=>FURN.some(x=>x[0]===f));visitNome=r.nome;snd('ok',.5,1);drawX();return true;}
   if(a==='vback'){visitFurn=null;drawX();return true;}
+  if(a==='btnsz'){btnScale(+k);snd('ok',.5,1);drawX();return true;}
   return false;}
 
 // ---------- ambiente igual para todas: dia, noite e clima seguem o celular da anfitriã ----------
@@ -2887,6 +2893,36 @@ NET.envT=0;
 function netEnvSend(dt){if(!NET.on||netHostId()!==NET.id||!Object.keys(NET.peers).length)return;if((NET.envT-=dt)>0)return;NET.envT=5;netEmit('env',{d:+day.toFixed(4),w:weather.k,wt:Math.round(weather.t)});}
 function netOnEnv(p){if(!p||netHostId()===NET.id)return;if(typeof p.d==='number'&&Math.abs(p.d-day)>.004)day=p.d;
   if(p.w&&p.w!==weather.k){weather.k=p.w;if(p.w!=='sol')showBanner(p.w==='chuva'?'🌧 Começou a chover':'⛈ Tempestade!');}if(p.wt)weather.t=Math.max(weather.t,p.wt);}
+
+// ---------- tamanho dos botões (fica salvo no aparelho) ----------
+const BTN_SZ=[[1,'Normal'],[1.15,'Grande'],[1.3,'Gigante']];
+function btnScale(v){if(v==null){try{v=+localStorage.getItem('hr_btn')||1;}catch(e){v=1;}}else{try{localStorage.setItem('hr_btn',v);}catch(e){}}
+  for(const id of ['btns','bpot']){const e=$(id);if(e){e.style.transformOrigin='bottom right';e.style.transform=v>1?'scale('+v+')':'';}}
+  const j=$('joy');if(j){j.style.transformOrigin='bottom left';j.style.transform=v>1?'scale('+v+')':'';}return v;}
+setTimeout(()=>btnScale(),500);
+
+// ---------- troca de itens entre irmãs (só peça que a outra já pode usar) ----------
+function itemGiftMenu(id){const p=NET.peers[id];if(!p)return '';const out=[];
+  for(const k of SLOTS)for(const t of P.own[k]){if(t===P.eq[k]||t===0)continue;if(TIER_LV[t]>p.s.lv)continue;out.push('<button data-act="gitem" data-id="'+id+'" data-k="'+k+'" data-t="'+t+'" style="border-color:'+TIER_C[t]+'">'+itemName(cls,k,t)+'</button>');}
+  return out.join('')||'<small>Nenhuma peça na mochila que '+String(p.s.n).replace(/[<>&]/g,'')+' já possa usar (precisa ter o nível da peça).</small>';}
+function netOnGiftItem(p){if(!p||p.to!==NET.id||!P)return;const t=Math.max(0,Math.min(4,+p.t||0));if(!SLOTS.includes(p.k))return;if(TIER_LV[t]>P.lv)return;
+  if(!P.own[p.k].includes(t))P.own[p.k].push(t);const r=Math.max(0,Math.min(REF_MAX,+p.r||0));if(r>refOf(p.k,t))P.ref[p.k+t]=r;recalc();save();
+  showBanner('🎽 '+String(p.n||'Uma amiga').slice(0,20)+' te deu: '+itemName(cls,p.k,t)+'!');snd('levelup',.7,1.2);}
+
+// ---------- tutorial da primeira vez ----------
+const TUT=['👋 Bem-vinda! Arraste o círculo da esquerda para andar.','⚔️ O botão grande ataca. Os botões em volta soltam magias (gastam PM).','👵 A Vovó perto do poço dá missões. Fale com ela tocando no balão 💬 em cima das pessoas.','⭐ Tem pets, montarias, casa, missões do dia e ranking. 💬 é o chat, o grupo e os presentes.','🔒 Suba de nível e vença os chefes para abrir novas regiões. Boa aventura, heroína!'];
+function tutStart(){const k='hr_tut_'+(loginId()||'x');try{if(localStorage.getItem(k))return;}catch(e){return;}let i=0;
+  const el=document.createElement('div');el.id='tut';el.style.cssText='position:absolute;left:50%;top:18%;transform:translateX(-50%);z-index:95;max-width:min(86vw,420px);background:rgba(16,22,48,.96);border:2px solid #ffd84a;border-radius:14px;padding:12px 14px;color:#fff;font:800 14px sans-serif;text-align:center';
+  ['pointerdown','touchstart','touchend','click'].forEach(ev=>el.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));document.body.appendChild(el);
+  const show=()=>{el.innerHTML=TUT[i]+'<br><button id="tutn" style="margin:8px 4px 0;padding:5px 14px;border-radius:9px;border:2px solid #ffd84a;background:#4a3410;color:#fff;font:800 13px sans-serif">'+(i<TUT.length-1?'Próximo ('+(i+1)+'/'+TUT.length+')':'Vamos lá!')+'</button><button id="tuts" style="margin:8px 4px 0;padding:5px 10px;border-radius:9px;border:1px solid #888;background:#222;color:#ccc;font:700 12px sans-serif">Pular</button>';
+    $('tutn').onclick=()=>{i++;if(i>=TUT.length)fim();else{show();snd('move',.5,1.2);}};$('tuts').onclick=fim;};
+  const fim=()=>{el.remove();try{localStorage.setItem(k,'1');}catch(e){}};show();}
+
+// ---------- fim de semana: Slimes Dourados na Floresta ----------
+function weekendGold(){const d=new Date().getDay();if(d!==0&&d!==6)return;let n=0;
+  for(let i=0;i<300&&n<8;i++){const tx=12+Math.random()*36|0,ty=12+Math.random()*28|0;if(!solidLand(tx,ty))continue;const m=mkMon('slime',tx*T+8,ty*T+8,8);m.mhp=m.hp=m.mhp*3;m.gold=1;m.n='Slime Dourado';mons.push(m);n++;}
+  setTimeout(()=>showBanner('✨ Fim de semana: Slimes Dourados na Floresta!'),2500);}
+function goldKill(m){if(!m.gold)return;for(let i=0;i<8;i++)scatter(m,{type:'coin',v:2});const r=Math.random();scatter(m,{type:'gem',g:r<.15?'o':r<.5?'p':'b'});addNum(m.x,m.y-30,'✨ Dourado!','#ffd84a',true);}
 
 window.netSnapshot=()=>P?{cls,n:P.n,lv:P.lv,x:Math.round(P.x),y:Math.round(P.y),ax:P.ax,ay:P.ay,eq:P.eq,hp:P.hp,mhp:P.mhp,anim:P.atkAnim||'',dead:!!P.dead}:null;
 MSI.slimeKing=MSI.slime1;netUI();
