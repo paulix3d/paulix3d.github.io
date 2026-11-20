@@ -352,6 +352,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0b0f1e;font-family:
     <div id="forgeBox"><div class="ftabs"><button class="ftab on" data-t="loja">🛒 Lojinha</button><button class="ftab" data-t="forte">🔨 Fortalecer</button><button class="ftab" data-t="pedras">💎 Pedras</button></div>
       <div id="forgeHint"></div><div id="forgeGrid"></div><div id="forgeMsg"></div></div></div>
   <div class="pp" id="bagr"><div class="ttl"><span id="bagico"></span>Mochila<small id="bagcoins"></small></div>
+    <div id="bagtabs" style="display:flex;gap:4px;justify-content:center;margin:0 0 3px"><button class="ftab on" style="padding:2px 10px;font-size:12px" data-bt="itens">🎒 Itens</button><button class="ftab" style="padding:2px 10px;font-size:12px" data-bt="pedras">💎 Pedras</button></div>
     <div id="baggrid"></div><div id="baginfo"></div>
     <div id="bagbtns"><button class="wbtn g" id="bagact">Vestir</button><button class="wbtn" id="bagx">Voltar ao jogo</button></div></div>
 </div></div>
@@ -1637,6 +1638,14 @@ function openBag(mode,npc){if(!run||P.dead||(dlgOpen&&!mode))return;bagMode=mode
 function closeBag(){snd('cancel',.45,1);bagOpen=false;$('bag').style.display='none';clearInterval(dollT);last=performance.now();}
 function statDiff(slot,t){const cur=P.eq[slot],o=[];for(const k in IST[slot]){const d=itemVal(slot,t,k)-itemVal(slot,cur,k);if(d)o.push('<span class="'+(d>0?'up':'dn')+'">'+(d>0?'+':'')+d+' '+ST_N[k]+'</span>');}return o.length?o.join(' · '):'mesmos atributos';}
 function cell(content,cls){const c=document.createElement('div');c.className='cell '+(cls||'');if(content)c.appendChild(content);return c;}
+let bagTab='itens';
+function drawBagGems(){const gr=$('baggrid'),inf=$('baginfo');$('bagact').style.display='none';
+  const ONDE={b:'Floresta e Pântano',p:'Floresta até Montanha',o:'Pântano até T. Sombrias',r:'Montanha até Masmorra',d:'T. Sombrias e Masmorra'},LV={b:1,p:2,o:3,r:4,d:5};
+  gr.innerHTML='<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:3px">'+GEM_ORD.map(k=>{const G_=GEMS[k],n=P.gems[k]||0,nx=GEM_ORD[GEM_ORD.indexOf(k)+1],cb=k==='b'||k==='p',can=cb&&n>=5;
+    return '<div data-gk="'+k+'" style="box-sizing:border-box;width:100%;display:flex;align-items:center;gap:5px;padding:1px 5px;border-radius:7px;background:rgba(255,248,230,.55);border:2px solid '+(n?G_.c:'rgba(90,60,30,.25)')+';opacity:'+(n?1:.6)+'"><span style="font-size:15px">'+G_.ico+'</span><span style="flex:1;min-width:0;text-align:left;line-height:1.1;color:#4a2e14;font:900 11px sans-serif;white-space:nowrap">'+G_.n+' <span style="font-size:13px">× '+n+'</span> <small style="font:800 9px sans-serif;opacity:.75">(+'+LV[k]+')</small></span>'+(cb?'<button data-gcb="'+k+'" style="flex:none;padding:2px 5px;border-radius:6px;border:2px solid #b8860b;background:'+(can?'#7a4a12':'#9a8a7a')+';color:#fff;font:800 9px sans-serif">5→1 '+GEMS[nx].ico+'</button>':'')+'</div>';}).join('')+'</div>';
+  gr.querySelectorAll('[data-gk]').forEach(r_=>r_.onclick=()=>{const k=r_.dataset.gk;inf.innerHTML='<small>'+GEMS[k].ico+' <b>'+GEMS[k].n+'</b>: fortalece até +'+LV[k]+' · cai em '+ONDE[k]+'</small>';});
+  gr.querySelectorAll('[data-gcb]').forEach(b_=>b_.onclick=e=>{e.stopPropagation();const k=b_.dataset.gcb,nx=GEM_ORD[GEM_ORD.indexOf(k)+1];if((P.gems[k]||0)<5){inf.innerHTML='Precisa de 5 '+GEMS[k].ico+' '+GEMS[k].n+' para juntar.';snd('cancel',.5,1);return;}P.gems[k]-=5;P.gems[nx]=(P.gems[nx]||0)+1;snd('gold',.8,1.2);save();drawBagGems();inf.innerHTML='Juntou 5 '+GEMS[k].n+' e virou 1 '+GEMS[nx].n+'! ✨';});
+  if(!inf.innerHTML.includes('Juntou'))inf.innerHTML='<small>Use no Ferreiro Tio Berto 🔨</small>';}
 function drawBag(){
   $('bagn').textContent=P.n;$('bagl2').textContent='Nível '+P.lv;
   if(!$('bagico').firstChild)$('bagico').innerHTML='<img src="'+UI.bag+'" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle">';
@@ -1648,6 +1657,9 @@ function drawBag(){
   // peças vestidas ao redor da heroína
   const L=$('eqL'),R=$('eqR');L.innerHTML='';R.innerHTML='';
   ['cabeca','peito','capa','maos'].forEach(k=>L.appendChild(eqCell(k,lb)));['arma','extra','pes'].forEach(k=>R.appendChild(eqCell(k,lb)));
+  // aba de pedras da mochila
+  $('bagtabs').style.display=fm?'none':'flex';$('bagtabs').querySelectorAll('[data-bt]').forEach(b_=>{b_.classList.toggle('on',b_.dataset.bt===bagTab);b_.onclick=e=>{e.stopPropagation();bagTab=b_.dataset.bt;bagSel=null;snd('move',.5,1);drawBag();};});
+  if(!fm&&bagTab==='pedras'){drawBagGems();return;}$('bagact').style.display='';
   // mochila: o que foi achado e não está vestido, + poções
   const gr=$('baggrid');gr.innerHTML='';const items=[];
   for(const k of SLOTS)for(const t of P.own[k])if(t!==P.eq[k])items.push([k,t]);
