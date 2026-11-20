@@ -451,7 +451,7 @@ let map;
 function genMap(){
   map=Array.from({length:MW},()=>new Uint8Array(MH));
   isle(60,68,22,16,GR,GR);isle(30,25,25,18,GR,GR);isle(90,28,22,18,SW,SW);isle(DKC.x,DKC.y,15,12,DK,ASH);brdg(78,71,89,71);isle(SNC.x,SNC.y,16,12,SN,SNE);isle(20,52,13,6,ST,ST);brdg(34,72,44,72);
-  brdg(59,48,59,56);brdg(59,38,59,48);brdg(48,38,59,38);brdg(59,33,77,33);
+  brdg(59,48,59,56);brdg(59,38,59,48);brdg(48,38,59,38);brdg(59,33,77,33);brdg(59,33,59,38); // ligação que faltava até a ponte do Pântano
   for(let x=52;x<69;x++){map[x][66]=PA;map[x][67]=PA;}
   for(let y=56;y<76;y++){map[59][y]=PA;map[60][y]=PA;}
   for(let x=88;x<103;x++)for(let y=23;y<38;y++){const d=Math.hypot(x-95,y-30);if(d<6.5)map[x][y]=DG;}
@@ -910,7 +910,7 @@ function setDirFromAim(){if(Math.abs(P.ax)>Math.abs(P.ay)){P.dir='side';P.face=P
 function hitMon(m,raw,o){
   if(m.pvp){pvpHit(m,raw,o);return;}
   o=o||{};if(m.dead)return;
-  const crit=Math.random()<(o.crit||.12);
+  const crit=Math.random()<(o.crit||.12)+(P.crT>0?.25:0);
   let d=Math.max(1,Math.round((raw-m.def*.5)*(crit?1.8:1)*(.9+Math.random()*.2)));
   m.hp-=d;m.ht=.12;m.lh=performance.now();netHit(m,d);
   const kb=(o.kb||90)*(m.boss?.25:1),ang=Math.atan2(m.y-P.y,m.x-P.x);
@@ -947,7 +947,7 @@ function hurtPlayer(d,src){
   if(P.hp<=0&&specialDeath())return;
   if(P.hp<=0){P.hp=0;P.dead=true;music('');snd('gameover',.8,1);setTimeout(()=>{const loss=Math.floor(P.xp*.1);P.xp-=loss;save();$('dloss').textContent='Perdeu '+loss+' XP (10% do nível). Nunca cai de nível.';$('dead').style.display='flex';},700);}
 }
-function gainXP(a,x,y){
+function gainXP(a,x,y){if(P.crT>0)a=Math.round(a*2);
   P.xp+=a;addNum(x,y-24,'+'+a+' XP','#b8f060');
   fx(F.xpOrb,{x:x,y:y},.8);
   let up=false;while(P.xp>=P.xpn&&P.lv<LV_MAX){P.xp-=P.xpn;P.lv++;P.xpn=XPN(P.lv);up=true;if(LV_MSG[P.lv])setTimeout(()=>showBanner(LV_MSG[P.lv]),1200);
@@ -1641,10 +1641,11 @@ const NPCDEF={
  luz:{n:'Dani',r:'Cura',x:50.5,y:72.6},
  ferro:{n:'Capitã Ferro',r:'Guarda da ponte',x:61.6,y:57.4},
  brasa:{n:'Tio Berto',r:'Ferreiro',x:69,y:72.6},
- pipa:{n:'Pipa',r:'Criança da vila',x:63.5,y:72,walk:1}};
+ pipa:{n:'Pipa',r:'Criança da vila',x:63.5,y:72,walk:1},
+ pocao:{n:'Lumi',r:'Poções e Cristais',x:60.4,y:36.2}};
 function nearWalk(x,y){for(let r=0;r<60;r+=4)for(let a=0;a<6.28;a+=.5){const nx=x+Math.cos(a)*r,ny=y+Math.sin(a)*r;if(walkable(nx,ny))return[nx,ny];}return[x,y];}
 function spawnNpcs(){npcs=[];for(const id in NPCDEF){const d=NPCDEF[id],[x,y]=nearWalk(d.x*T,d.y*T);
-  npcs.push({id,n:d.n,r:d.r,x,y,sx:x,sy:y,vx:0,vy:0,dir:'down',face:1,walk:0,t:Math.random()*3,wk:d.walk,H:buildSheets('npc:'+id,LPC.npc[id])});}window.__npcs=npcs;
+  npcs.push({id,n:d.n,r:d.r,x,y,sx:x,sy:y,vx:0,vy:0,dir:'down',face:1,walk:0,t:Math.random()*3,wk:d.walk,H:buildSheets('npc:'+id,LPC.npc[id]||LPC.npc.luz)});}window.__npcs=npcs;
   const b=npcs.find(n=>n.id==='brasa');if(b){deco=deco.filter(d=>d.k!=='anvil');deco.push({k:'anvil',x:b.x+18,y:b.y+2});}}
 // Vovó Tita de vez em quando solta um pum verde 💨
 function vovoPum(n,dt){if(n.pum===undefined)n.pum=20+Math.random()*30;n.pum-=dt;if(n.pum>0)return;n.pum=35+Math.random()*45;
@@ -1720,7 +1721,12 @@ function giveItem(){ // peça nova: até um nível acima do que ela já usa (a d
   const top=Math.min(2,TIER_LV.filter(l=>P.lv>=l).length);
   for(let t=top;t>=0;t--){const free=SLOTS.filter(k=>!P.own[k].includes(t));if(free.length){const k=pick(free);P.own[k].push(t);
     if(t>P.eq[k]&&P.lv>=TIER_LV[t])equip(k,t,true);toast(k,t,'Ganhou: '+itemName(cls,k,t),P.lv>=TIER_LV[t]?itemStats(k,t):'fica na mochila até o Nível '+TIER_LV[t]);return true;}}return false;}
+const CRISTAL_PRECO=1000;
 const TALK={
+ pocao(n){say(n,'Antes de atravessar para o Pântano, leve umas poções! E o meu <b>Cristal Mágico</b>: por 1 minuto você ganha <b>XP em dobro</b> e <b>+25% de golpe crítico</b>.'+(P.crT>0?'<br><small>💎 Seu cristal ainda brilha: '+Math.ceil(P.crT)+'s</small>':'')+'<br><small>Você tem <b>'+P.coins+'</b> moedas.</small>',[
+   {t:'Poção de Vida · 20',i:UI.pot,c:P.coins>=20&&P.pots<POT_MAX?'g':'off',f:()=>{if(P.pots>=POT_MAX)return say(n,'Sua bolsa de poções já está cheia ('+POT_MAX+')!',[]);if(P.coins<20)return say(n,'Faltam moedas! Derrote uns monstrinhos e volte.',[]);P.coins-=20;P.pots++;save();snd('coin',.6);TALK.pocao(n);}},
+   {t:'Encher a bolsa ('+Math.max(0,POT_MAX-P.pots)+') · '+Math.max(0,POT_MAX-P.pots)*20,i:UI.pot,c:P.pots<POT_MAX&&P.coins>=Math.max(0,POT_MAX-P.pots)*20?'g':'off',f:()=>{const q=POT_MAX-P.pots,c=q*20;if(q<=0)return say(n,'Sua bolsa já está cheia!',[]);if(P.coins<c)return say(n,'Para encher tudo precisa de '+c+' moedas.',[]);P.coins-=c;P.pots=POT_MAX;save();snd('coin',.7);TALK.pocao(n);}},
+   {t:'💎 Cristal Mágico (1 min) · '+CRISTAL_PRECO,c:P.coins>=CRISTAL_PRECO?'g':'off',f:()=>{if(P.coins<CRISTAL_PRECO)return say(n,'O Cristal Mágico é caro: '+CRISTAL_PRECO+' moedas. Junte mais e volte!',[]);P.coins-=CRISTAL_PRECO;P.crT=(P.crT>0?P.crT:0)+60;save();snd('levelup',.8,1.4);CFX({k:'circle',x:P.x,y:P.y,r:34,d:.8,col:'#8af0ff'});CFX({k:'wave',x:P.x,y:P.y,r:40,d:.6,col:'#8af0ff',top:1});addNum(P.x,P.y-40,'💎 XP x2 e +25% crítico por 1 minuto!','#8af0ff',true);say(n,'O cristal está brilhando em você! Aproveite cada segundo! ✨',[]);}}]);},
  rosa(n){say(n,pick(['Olá, '+P.n+'! Tenho coisas boas hoje. O que vai querer?','Bem-vinda à minha lojinha! Moedas na mão, aventura no coração!','Os monstros soltam moedas. Traga aqui que eu troco por coisas úteis!'])+'<br><small>Você tem <b>'+P.coins+'</b> moedas.</small>',[
    {t:'Poção de Vida · 20',i:UI.pot,c:P.coins>=20&&P.pots<POT_MAX?'g':'off',f:()=>{if(P.pots>=POT_MAX)return say(n,'Sua bolsa de poções já está cheia ('+POT_MAX+')!',[]);if(P.coins<20)return say(n,'Faltam moedas, querida. Derrote uns monstrinhos e volte!',[]);P.coins-=20;P.pots++;save();TALK.rosa(n);}},
    {t:'Baú Surpresa · 120',i:UI.bag,c:P.coins>=120?'g':'off',f:()=>{if(P.coins<120)return say(n,'O Baú Surpresa custa 120 moedas. Junte mais um pouquinho!',[]);if(!giveItem())return say(n,'Você já tem todas as peças que eu consigo arrumar agora! Suba de nível que chegam outras.',[]);P.coins-=120;save();say(n,'Olha só o que tinha no baú! ✨',[]);}}]);},
@@ -2596,12 +2602,12 @@ function toggleMount(on){if(!hasMount())return;XS.mountOn=on==null?!XS.mountOn:o
 function xStart(){xLoad();arenaGate=null;arenaDeco();setTimeout(tutStart,1800);weekendGold();btnScale();try{tpOn=JSON.parse(localStorage.getItem(tpKey())||'["vila"]');}catch(e){tpOn=['vila'];}if($('bfull'))$('bfull').style.display='none';FESTA=festa();festaDeco();xPetSpawn();catLost=null;catLostT=200;weather={k:'sol',t:150};
   $('bx').style.display='flex';$('bmount').style.display=hasMount()?'flex':'none';$('bmount').textContent=(MOUNTS[XS.mk]||MOUNTS.nuvem).ico;$('bmount').classList.toggle('on',!!XS.mountOn);recalc();
   if(FESTA)setTimeout(()=>showBanner(FESTA.k==='natal'?'🎄 Feliz Natal na vila!':FESTA.k==='halloween'?'🎃 Dia das bruxas na vila!':FESTA.k==='carnaval'?'🎉 Carnaval na vila!':'🎂 Feliz aniversário, '+FESTA.nome+'!'),1500);}
-function xUpdate(dt){if(!XS)return;arenaUpdate(dt);evUpdate(dt);updPet(dt);updFish(dt);updWeather(dt);updCatLost(dt);if(banner){banner.life-=dt;if(banner.life<=0)banner=null;}
+function xUpdate(dt){if(!XS)return;cristalUpd(dt);arenaUpdate(dt);evUpdate(dt);updPet(dt);updFish(dt);updWeather(dt);updCatLost(dt);if(banner){banner.life-=dt;if(banner.life<=0)banner=null;}
   for(const d of deco)if(d.k==='dkey'&&!XS.keys.includes(d.i)&&Math.hypot(P.x-d.x,P.y-d.y)<14){XS.keys.push(d.i);xSave();snd('gold',.8,1.2);addNum(d.x,d.y-20,'Chave '+XS.keys.length+'/3 🗝','#ffd84a',true);}
   mons=mons.filter(m=>!(m.temp&&m.dead&&!(m.dieT>0)));
   if(xUpdate.t==null||(xUpdate.t-=dt)<=0){xUpdate.t=3;xCheckAch();}}
 function xDraw(d,x,y){if(d.k==='pet'){drawPet(d,x,y);return true;}if(d.k==='plot'){drawPlot(d,x,y);return true;}if(d.k==='festa'){drawFestaDeco(d,x,y);return true;}if(d.k==='cat'&&d.hidden)return true;return drawDunDeco(d,x,y);}
-function xOverlay(ox,oy,nightK){drawCatLost(ox,oy);if(typeof myBubble!=='undefined'&&myBubble){myBubble.t-=1/60;const x=P.x-ox,y=P.y-oy;g.save();g.font='800 7px "Trebuchet MS",sans-serif';g.textAlign='center';const bw=Math.min(120,g.measureText(myBubble.txt).width+8);g.fillStyle='rgba(255,240,180,.95)';g.fillRect(x-bw/2,y-50,bw,11);g.fillStyle='#2a1a0a';g.fillText(myBubble.txt,x,y-42);g.restore();if(myBubble.t<=0)myBubble=null;}drawWeather(ox,oy);drawFesta(ox,oy);
+function xOverlay(ox,oy,nightK){drawCatLost(ox,oy);cristalHud();if(typeof myBubble!=='undefined'&&myBubble){myBubble.t-=1/60;const x=P.x-ox,y=P.y-oy;g.save();g.font='800 7px "Trebuchet MS",sans-serif';g.textAlign='center';const bw=Math.min(120,g.measureText(myBubble.txt).width+8);g.fillStyle='rgba(255,240,180,.95)';g.fillRect(x-bw/2,y-50,bw,11);g.fillStyle='#2a1a0a';g.fillText(myBubble.txt,x,y-42);g.restore();if(myBubble.t<=0)myBubble=null;}drawWeather(ox,oy);drawFesta(ox,oy);
   if(banner){const a=Math.min(1,banner.life*2,(3.2-banner.life)*4);g.save();g.globalAlpha=a;g.font='900 11px "Trebuchet MS",sans-serif';g.textAlign='center';const w=g.measureText(banner.t).width+20;
     g.fillStyle='rgba(20,12,40,.85)';g.fillRect(LW/2-w/2,LH-58,w,18);g.strokeStyle='#f2c94c';g.strokeRect(LW/2-w/2+.5,LH-57.5,w-1,17);g.fillStyle='#ffe8a0';g.fillText(banner.t,LW/2,LH-45);g.restore();}}
 function xKill(m){if(m.t==='slimek')slimeSplit(m);goldKill(m);xCheckAch();}
@@ -3125,6 +3131,10 @@ function backToMenu(){if(!run)return;if(inDesaf())desafLeave(false);if(inArena()
   run=false;for(const id of ['xp','bag','dlg','dead','bigmap','dev','volp','fishp','chatp','ginv','tut'])if($(id))$(id).style.display='none';
   for(const id of ['hud','btns','topr','touch','bbag','bpot','coins','bbook','bx','bmount','bchat','bsom','bdev','quest'])if($(id))$(id).style.display='none';
   bagOpen=false;dlgOpen=false;bookOpen=false;$('menu').style.display='flex';snd('move',.5,1);setTimeout(menuStats,50);}
+
+// cristal mágico: contagem e brilho em volta da heroína
+function cristalUpd(dt){if(P&&P.crT>0){P.crT-=dt;if(P.crT<=0){P.crT=0;addNum(P.x,P.y-36,'💎 O cristal apagou','#8af0ff');}else if(Math.random()<.35)glowAt((P.x+(Math.random()-.5)*18)*2,(P.y-4-Math.random()*26)*2,5,Math.random()<.5?'#8af0ff':'#ffffff',.8);}}
+function cristalHud(){if(!P||!(P.crT>0))return;g.save();g.setTransform(1,0,0,1,0,0);const w=g.canvas.width;g.font='900 '+Math.round(w/60)+'px "Trebuchet MS",sans-serif';g.textAlign='center';const t='💎 XP x2 · Crítico +25% · '+Math.ceil(P.crT)+'s';g.lineWidth=4;g.strokeStyle='rgba(0,0,0,.7)';g.strokeText(t,w/2,g.canvas.height*.2);g.fillStyle='#8af0ff';g.fillText(t,w/2,g.canvas.height*.2);g.restore();}
 
 window.netSnapshot=()=>P?{cls,n:P.n,lv:P.lv,x:Math.round(P.x),y:Math.round(P.y),ax:P.ax,ay:P.ay,eq:P.eq,hp:P.hp,mhp:P.mhp,anim:P.atkAnim||'',dead:!!P.dead}:null;
 MSI.slimeKing=MSI.slime1;netUI();
